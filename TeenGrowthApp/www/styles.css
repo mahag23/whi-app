@@ -1,0 +1,79 @@
+/* Importing the Montserrat font */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+/* Applying the font and default color to the entire body */
+body {
+  font-family: 'Montserrat', sans-serif;
+  color: #1A4F66;
+  background-color: #EEECE1; /* Set the background color */
+}
+
+/* Customizing the tab colors */
+.nav-tabs > li > a {
+  color: #EF6C45;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:focus,
+.nav-tabs > li.active > a:hover {
+  background-color: #EF6C45;
+  color: white;
+}
+
+.nav-tabs > li > a:hover {
+  background-color: #EF6C45;
+  color: white;
+}
+
+/* Customizing specific elements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700; /* Bold weight */
+}
+
+p, div, span, input, select, button, table {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400; /* Normal weight */
+}
+
+/* Adjusting container background */
+.container-background {
+  background-color: #EEECE1;
+  padding: 10px;
+  border: 1px solid #ccc; /* Keeps the grey outline */
+  border-radius: 5px;
+}
+/* Logo styling */
+.logo-container {
+  position: absolute;
+  top: 10px; /* Adjust as needed */
+  right: 10px; /* Adjust as needed */
+  z-index: 1000; /* Ensure the logo is on top */
+}
+
+.logo-container img {
+  width: 100px; /* Adjust as needed */
+  height: auto;
+}
+/* Ensuring the text in input fields is also visible with the new background */
+input::placeholder, textarea::placeholder {
+  color: #1A4F66;
+}
+
+/* Styling action buttons to match the input fields */
+.action-button {
+  background-color: #1A4F66;
+  color:#EEECE1;
+  border: 1px solid #1A4F66;
+  padding: 10px 20px; /* Ensure buttons have consistent padding */
+}
+
+.action-button:hover {
+  background-color: #EF6C45;
+  color: white;
+  border: 1px solid #EF6C45;
+}
+
+.custom-plot-container .shiny-plot-output {
+    background: transparent !important;
+}
