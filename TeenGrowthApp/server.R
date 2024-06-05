@@ -1,10 +1,3 @@
-library(shiny)
-library(shinyjs)
-library(readxl)
-library(TeenGrowth)
-library(dplyr)
-library(embarktools)
-
 server <- function(input, output, session) {
   demo_data <- TeenGrowth::demo
 
@@ -25,6 +18,12 @@ server <- function(input, output, session) {
     } else {
       demo_data
     }
+  })
+
+  # Reactive to check if DOB is missing
+  dob_missing <- reactive({
+    cleaned_df <- cleaned_data()
+    "dob" %in% input$age_columns && !("dob" %in% colnames(cleaned_df))
   })
 
   observeEvent(input$data_source, {
@@ -180,13 +179,26 @@ server <- function(input, output, session) {
     age_adult_height_needed <- all(is.na(selected_data$agemos_adult_ht))
     ed_aoo_needed <- all(is.na(selected_data$agemos_ed_onset))
 
+    tx_start_date_needed <- TRUE  # Always needed
+    intake_wt_needed <- TRUE  # Always needed
+    current_height_needed <- adult_height_needed  # Needed if adult height is not provided
+    age_current_height_needed <- age_adult_height_needed  # Needed if age at adult height is not provided
+
     output$adult_height_needed <- reactive({ adult_height_needed })
     output$age_adult_height_needed <- reactive({ age_adult_height_needed })
     output$ed_aoo_needed <- reactive({ ed_aoo_needed })
+    output$tx_start_date_needed <- reactive({ tx_start_date_needed })
+    output$intake_wt_needed <- reactive({ intake_wt_needed })
+    output$current_height_needed <- reactive({ current_height_needed })
+    output$age_current_height_needed <- reactive({ age_current_height_needed })
 
     outputOptions(output, "adult_height_needed", suspendWhenHidden = FALSE)
     outputOptions(output, "age_adult_height_needed", suspendWhenHidden = FALSE)
     outputOptions(output, "ed_aoo_needed", suspendWhenHidden = FALSE)
+    outputOptions(output, "tx_start_date_needed", suspendWhenHidden = FALSE)
+    outputOptions(output, "intake_wt_needed", suspendWhenHidden = FALSE)
+    outputOptions(output, "current_height_needed", suspendWhenHidden = FALSE)
+    outputOptions(output, "age_current_height_needed", suspendWhenHidden = FALSE)
   })
 
   output$conditional_model_inputs <- renderUI({
@@ -198,6 +210,12 @@ server <- function(input, output, session) {
 
     if (all(is.na(selected_data$agemos_ed_onset))) {
       inputs <- append(inputs, list(numericInput("ed_aoo", "Eating Disorder Age of Onset (Years):", value = 12, min = 1)))
+    }
+    if (all(is.na(selected_data$adult_height_in))) {
+      inputs <- append(inputs, list(numericInput("adult_height_in", "Adult Height (in):", value = NULL, min = 1)))
+    }
+    if (all(is.na(selected_data$agemos_adult_ht))) {
+      inputs <- append(inputs, list(numericInput("age_adult_height", "Age at Adult Height (years):", value = NULL, min = 1)))
     }
 
     do.call(tagList, inputs)
@@ -291,6 +309,14 @@ server <- function(input, output, session) {
 
   observeEvent(input$back_button_data_spec, {
     updateTabsetPanel(session, "main_tabs", selected = "Data Input")
+  })
+
+  observeEvent(input$next_button_model_selection, {
+    updateTabsetPanel(session, "main_tabs", selected = "Weight Restoration Planning")
+  })
+
+  observeEvent(input$back_button_weight_restoration, {
+    updateTabsetPanel(session, "main_tabs", selected = "Model Selection")
   })
 
   output$WtPlot <- renderPlot({
@@ -504,51 +530,164 @@ server <- function(input, output, session) {
     ))
   })
 
-  output$wt_restore_graph <-  renderPlot({
+  output$wt_restore_graph <- renderPlot({
     req(model_data())
+    req(data())
     data <- model_data()
+    raw_data <- data() |>
+      filter(!!sym(input$id_column) == input$person_id)
+    cleaned_data <- data$selected_data
 
-  tx_plot_clean <- tx_plot_clean(
-      filtered_data,
-      age_col_name = NULL,
-      date_assessed_col_name = NULL,
-      ht_col_name = NULL,
-      wt_col_name = NULL,
-      age_unit = NULL,
-      ht_unit = 'cm',
-      wt_unit = 'kg',
-      bmi_col_name = NULL,
-      bmiz_col_name = NULL,
-      pct_col_name = NULL,
+    dob <- if ("dob" %in% input$age_columns) {
+      dob_colname <- input$dob_column
+      id_colname <- input$id_column
+      dob_value <- raw_data %>%
+        filter(!!sym(id_colname) == input$person_id) %>%
+        pull(!!sym(dob_colname))
+      dob_value[1]
+    } else if (!is.null(input$dob)) {
+      dob_value <- input$dob
+    }
+    sex <- if ("sex" %in% input$demographics_columns) {
+      input$sex_column
+    } else {
+      input$sex
+    }
+    current_ht <- if (!is.null(input$height_value_column) && input$height_value_column %in% colnames(cleaned_data)) {
+      cleaned_data[[input$height_value_column]]
+    } else {
+      input$current_height
+    }
+    age_current_ht <- if ("age_adult_height" %in% input$demographics_columns) {
+      input$age_adult_height
+    } else {
+      input$age_current_height
+    }
+    adult_ht <- if ("adult_height" %in% input$demographics_columns) {
+      adult_ht_col <- input$adult_height_column
+      id_colname <- input$id_column
+      adult_ht_value <- raw_data %>%
+        filter(!!sym(id_colname) == input$person_id) %>%
+        pull(!!sym(adult_ht_col))
+      adult_ht_value[1]
+    } else if (!is.null(input$dob)) {
+      adult_ht <- input$adult_height_in
+    }
+    ed_aoo <- if ("ed_age_onset" %in% input$demographics_columns) {
+      input$aao_column
+    } else {
+      input$ed_aoo
+    }
+    tx_start_date <- if (!is.null(input$tx_start_date) && !is.na(input$tx_start_date)) {
+      input$tx_start_date
+    } else {
+      NA
+    }
+    intake_wt <- if (!is.null(input$intake_wt) && !is.na(input$intake_wt)) {
+      input$intake_wt
+    } else {
+      NULL
+    }
+
+    filtered_data <- tx_plot_clean(
+      raw_data,
+      age_col_name = input$age_column,
+      date_assessed_col_name = input$assessment_date_column,
+      ht_col_name = input$height_value_column,
+      wt_col_name = input$weight_column,
+      age_unit = 'years',
+      ht_unit = 'in',
+      wt_unit = 'lbs',
+      bmi_col_name = input$bmi_column,
+      bmiz_col_name = input$bmi_z_column,
+      pct_col_name = input$bmi_percentile_column,
       data_source = 'cdc',
-      dob = NULL,
-      sex = NULL,
+      dob = dob,
+      sex = sex,
       current_ht = NULL,
       age_current_ht = NULL,
-      adult_ht = NULL,
-      age_adult_ht = NULL,
-      ed_aoo = NULL,
-      tx_start_date = NULL,
-      intake_wt = NULL
+      adult_ht = adult_ht,
+      age_adult_ht = 14,
+      ed_aoo = ed_aoo,
+      tx_start_date = tx_start_date,
+      intake_wt = intake_wt
     )
+
+    print(filtered_data)
+
+ forecast_data <-  data$forecast_data |>
+      filter(id == input$person_id)
 
     tryCatch({
       TeenGrowth::Wt_Restore_Plot(
-        data$selected_data,
-        data$forecast_data,
-        px = input$person_id,
-        agemos_onset_ed = data$selected_data$agemos_ed_onset[1]
-      )
+        filtered_data,
+        forecast_data = forecast_data )
     }, error = function(e) {
-      cat("Error in plotting BMI:", e$message, "\n")
+      cat("Error in plotting Weight restoration:", e$message, "\n")
     })
-  }, bg = "transparent")
-
-
+  },
+  bg = "transparent")
 
   output$data_cleaned <- reactive({
     cleaned_data_status()
   })
 
   outputOptions(output, "data_cleaned", suspendWhenHidden = FALSE)
+
+  output$rawdata <- renderTable({
+    req(data())
+    head(data(), 30)
+  })
+
+  output$rawdata_spec <- renderTable({
+    req(data())
+    head(data(), 30)
+  })
+
+  output$conditional_weight_restoration_inputs <- renderUI({
+    req(input$person_id)
+    cleaned_df <- cleaned_data()
+    selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
+
+    inputs <- list()
+
+    if (TRUE) {  # Always needed
+      inputs <- append(inputs, list(dateInput("tx_start_date", "Treatment Start Date:", value = NULL)))
+    }
+    # if (TRUE) {  # Always needed
+    #   inputs <- append(inputs, list(numericInput("intake_wt", "Intake Weight (lbs):", value = NULL, min = 1)))
+    # }
+    if (is.null(input$adult_height_in) & !("adult_height" %in%(input$demographic_columns))) {  # Need only if no adult height
+      inputs <- append(inputs, list(numericInput("current_height", "Current Height (in):", value = NULL, min = 1)))
+    }
+    if (is.null(input$adult_height_in) & !("adult_height" %in%(input$demographic_columns))) {  # Always needed
+      inputs <- append(inputs, list(numericInput("age_current_height", "Age at Current Height (years):", value = NULL, min = 1)))
+    }
+    if (is.null(selected_data$dob) || all(is.na(selected_data$dob))) {
+      inputs <- append(inputs, list(dateInput("dob", "Date of Birth:", value = NULL)))
+    }
+
+    do.call(tagList, inputs)
+  })
+
+  # Navigate between tabs
+  observeEvent(input$next_button_data_input, {
+    updateTabsetPanel(session, "main_tabs", selected = "Data Specification")
+  })
+
+  observeEvent(input$next_button_data_spec, {
+    updateTabsetPanel(session, "main_tabs", selected = "Model Selection")
+  })
+
+  observeEvent(input$back_button_data_spec, {
+    updateTabsetPanel(session, "main_tabs", selected = "Data Input")
+  })
+
+  observeEvent(input$next_button_weight_restoration, {
+    updateTabsetPanel(session, "main_tabs", selected = "Model Selection")
+  })
+
+  observeEvent(input$back_button_weight_restoration, {
+    updateTabsetPanel(session, "main_tabs", selected = "Model Selection")
+  })
 }

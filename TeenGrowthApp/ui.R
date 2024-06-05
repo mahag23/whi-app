@@ -76,7 +76,7 @@ ui <- fluidPage(
                mainPanel(
                  h3("Raw Data"),
                  p("Note. Only the first 30 rows are displayed."),
-                 tableOutput("rawdata"),
+                 tableOutput("rawdata")
                )
              )
     ),  # End of Data Input Tab
@@ -136,7 +136,8 @@ ui <- fluidPage(
                    condition = "output.age_adult_height_needed == true",
                    numericInput("age_adult_height", "Age at Adult Height (years):", value = NULL, min = 1)
                  ),
-                 actionButton("run_model", "Run / Update Model")
+                 actionButton("run_model", "Run / Update Model"),
+                 actionButton("next_button_model_selection", "Next"),
                ),
                mainPanel(
                  tabsetPanel(
@@ -153,13 +154,23 @@ ui <- fluidPage(
              )
     ),  # End of Model Selection Tab
 
-    # New Weight Restoration Planning Tab
+    # Weight Restoration Planning Tab
     tabPanel("Weight Restoration Planning",
-             h3("Weight Restoration Planning"),
-             p("Under construction")
-    ),
+             sidebarLayout(
+               sidebarPanel(
+                 class = "container-background",
+                 h3("Weight Restoration Planning"),
+                 uiOutput("conditional_weight_restoration_inputs"),
+                 actionButton("plot_weight_restoration", "Plot Weight Restoration Plan"),
+                 actionButton("back_button_weight_restoration", "Back")
+               ),
+               mainPanel(
+                 div(class = "custom-plot", plotOutput("wt_restore_graph"))
+               )
+             )
+    ),  # End of Weight Restoration Planning Tab
 
-    # New Background and FAQ Tab
+    # Background and FAQ Tab
     tabPanel("Background and FAQ",
              h3("Background"),
              p("The TeenGrowth app is designed to provide individualized expected body weights for young people with eating disorders. It leverages individuals growth chart data to make accurate predictions and help in planning weight restoration."),
@@ -167,10 +178,9 @@ ui <- fluidPage(
              h4("How do I use this app?"),
              p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models."),
              h4("What kind of data can I upload?"),
-             p("You can upload data in CSV or Excel format. Ensure your data contains the necessary information in columns such as age, anthropometric indicators, and  other relevant information as specified in the 'Data Input' tab."),
+             p("You can upload data in CSV or Excel format. Ensure your data contains the necessary information in columns such as age, anthropometric indicators, and other relevant information as specified in the 'Data Input' tab."),
              h4("What is the purpose of this app?"),
              p("The purpose of the TeenGrowth app is to assist healthcare providers, researchers, and families in understanding and planning weight restoration for young individuals with eating disorders. It provides a scientific basis for setting realistic and individualized weight goals.")
     )
   )  # End of tabsetPanel
 )  # End of fluidPage
-
