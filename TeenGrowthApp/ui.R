@@ -176,11 +176,12 @@ ui <- fluidPage(
              p("The TeenGrowth app is designed to provide individualized expected body weights for young people with eating disorders. It leverages individuals growth chart data to make accurate predictions and help in planning weight restoration."),
              h3("FAQ"),
              h4("How do I use this app?"),
-             p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models."),
+             p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models. Finally- you can plan for weight restoration in the 'Weight Restoration Planning' tab. Steps must proceed in order for everything to work appropriately."),
              h4("What kind of data can I upload?"),
              p("You can upload data in CSV or Excel format. Ensure your data contains the necessary information in columns such as age, anthropometric indicators, and other relevant information as specified in the 'Data Input' tab."),
              h4("What is the purpose of this app?"),
-             p("The purpose of the TeenGrowth app is to assist healthcare providers, researchers, and families in understanding and planning weight restoration for young individuals with eating disorders. It provides a scientific basis for setting realistic and individualized weight goals.")
+             p("The purpose of the TeenGrowth app is to assist healthcare providers and researchers in understanding and planning weight restoration for young individuals with eating disorders. It provides individualized weight goals, based on prior growth data."),
+             h3("MORE COMING SOON....")
     )
   )  # End of tabsetPanel
 )  # End of fluidPage
