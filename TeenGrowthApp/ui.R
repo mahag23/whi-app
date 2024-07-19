@@ -178,6 +178,8 @@ ui <- fluidPage(
              p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models. Finally, you can plan for weight restoration in the 'Weight Restoration Planning' tab. Steps must proceed in order for everything to work appropriately."),
              h4("What kind of data can I upload?"),
              p("You can upload data in CSV or Excel format. Ensure your data contains the necessary information in columns such as age, anthropometric indicators, and other relevant information as specified in the 'Data Input' tab."),
+             h4("I'm getting stuck! My models won't run"),
+             p("The TeenGrowth Package is still in very early phases of development and there are likely to be unanticipated bugs and issues -- particularly with tricky data formats like dates. Dr. Schaumberg (kschaumberg@wisc.edu) is happy to help troubleshoot any issues you may be having. Please reach out to her with any questions or concerns."),
              h4("What is the purpose of this app?"),
              p("The purpose of the TeenGrowth app is to assist healthcare providers and researchers in understanding and planning weight restoration for young individuals with eating disorders. It provides individualized weight goals, based on prior growth data."),
              h3("Where can I find more information?"),
