@@ -54,10 +54,9 @@ ui <- fluidPage(
                                         choices = list("ID (Required if n > 1)" = "id",
                                                        "Sex (for reference charts; defaults to Female If NA)" = "sex",
                                                        "Adult Height (Optional)" = "adult_height",
-                                                       "Age at Adult Height (Optional)" = "age_adult_height",
                                                        "Eating Disorder Age of Onset (Optional)" = "ed_age_onset")
                      ),
-                     h5("Age at Assessment (1 Required)"),
+                     h5("Age at Assessment (Choose One)"),
                      checkboxGroupInput("age_columns", NULL,
                                         choices = list("Age" = "age",
                                                     "Date of Birth + Date of Assessment" = "Dates")

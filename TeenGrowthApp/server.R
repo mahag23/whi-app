@@ -23,7 +23,6 @@ server <- function(input, output, session) {
                  "xls" = readxl::read_excel(file$datapath),
                  stop("Unsupported file type"))
 
-    # Check and convert date columns if necessary
     date_columns <- c("DOB", "Date")  # Add or modify column names as needed
     for (col in date_columns) {
       if (col %in% names(df)) {
@@ -32,6 +31,7 @@ server <- function(input, output, session) {
         } else if (is.character(df[[col]])) {
           df[[col]] <- as.Date(df[[col]], tryFormats = c("%m/%d/%y", "%Y-%m-%d"))  # Adjust the date formats based on your data
         }
+        df[[col]] <- format(df[[col]], "%Y-%m-%d")  # Convert to ISO format
       }
     }
     return(df)
@@ -101,6 +101,8 @@ server <- function(input, output, session) {
       selectInput("age_unit", "Age Unit", choices = c("years", "months", "days"), selected = if (input$data_source == "demo") "years" else NULL)
     )
 
+
+
     columns_list <- list(
       "id" = list(textInput("id_column", "Name of the id column:", value = if (input$data_source == "demo") "participant" else NULL)),
       "age" = list(textInput("age_column", "Name of the age column:", value = if (input$data_source == "demo") "age" else NULL)),
@@ -137,15 +139,7 @@ server <- function(input, output, session) {
         if (!("sex" %in% input$demographics_columns)) {
           inputs <- append(inputs, list(selectInput("sex", "What is the individual's sex at birth?", choices = c("Male", "Female")))) }
 
-        # if (!("adult_height" %in% input$demographics_columns)) {
-        #   inputs <- append(inputs, list(numericInput("aheight", "What is the individual's adult height? (Optional)", value = NULL, min = 55, max = 200)))
-        # }
-        # if (!("age_adult_height" %in% input$demographics_columns)) {
-        #   inputs <- append(inputs, list(numericInput("aheight_age", "At what age did the individual reach their adult height? (Optional)", value = NULL, min = 1, max = 25)))
-        # }
-        # if (!("ed_age_onset" %in% input$demographics_columns)) {
-        #   inputs <- append(inputs, list(numericInput("symptoms", "At what age did the individual first experience significant eating disorder symptoms? (Optional)", value = NULL, min = 1)))
-       #}
+
       }
     }
 
@@ -173,18 +167,6 @@ server <- function(input, output, session) {
         df <- df %>% mutate(sex = input$sex)
         updateTextInput(session, "sex_column", value = "sex")
       }
-      # if (!("adult_height" %in% colnames(df)) && !is.null(input$aheight)) {
-      #   df <- df %>% mutate(adult_height = input$aheight)
-      #   updateTextInput(session, "adult_height_column", value = "adult_height")
-      # }
-      # if (!("age_adult_height" %in% colnames(df)) && !is.null(input$aheight_age)) {
-      #   df <- df %>% mutate(age_adult_height = input$aheight_age)
-      #   updateTextInput(session, "age_adult_height_column", value = "age_adult_height")
-      # }
-      # if (!("ed_age_onset" %in% colnames(df)) && !is.null(input$symptoms)) {
-      #   df <- df %>% mutate(ed_age_onset = input$symptoms)
-      #   updateTextInput(session, "aao_column", value = "ed_age_onset")
-      # }
     }
 
     required_columns <- c(
