@@ -60,7 +60,7 @@ ui <- fluidPage(
                      h5("Age at Assessment (1 Required)"),
                      checkboxGroupInput("age_columns", NULL,
                                         choices = list("Age" = "age",
-                                                       "Date of Birth + Date of Assessment" = "Dates")
+                                                    "Date of Birth + Date of Assessment" = "Dates")
                      ),
                      h5("Anthropometric (1 Required)"),
                      checkboxGroupInput("anthropometric_columns", NULL,
@@ -173,15 +173,19 @@ ui <- fluidPage(
     # Background and FAQ Tab
     tabPanel("Background and FAQ",
              h3("Background"),
-             p("The TeenGrowth app is designed to provide individualized expected body weights for young people with eating disorders. It leverages individuals growth chart data to make accurate predictions and help in planning weight restoration."),
+             p("The TeenGrowth app is designed to provide individualized expected body weights for young people with eating disorders. It leverages individuals' growth chart data to make accurate predictions and help in planning weight restoration."),
              h3("FAQ"),
              h4("How do I use this app?"),
-             p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models. Finally- you can plan for weight restoration in the 'Weight Restoration Planning' tab. Steps must proceed in order for everything to work appropriately."),
+             p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models. Finally, you can plan for weight restoration in the 'Weight Restoration Planning' tab. Steps must proceed in order for everything to work appropriately."),
              h4("What kind of data can I upload?"),
              p("You can upload data in CSV or Excel format. Ensure your data contains the necessary information in columns such as age, anthropometric indicators, and other relevant information as specified in the 'Data Input' tab."),
              h4("What is the purpose of this app?"),
              p("The purpose of the TeenGrowth app is to assist healthcare providers and researchers in understanding and planning weight restoration for young individuals with eating disorders. It provides individualized weight goals, based on prior growth data."),
-             h3("MORE COMING SOON....")
+             h3("Where can I find more information?"),
+             p("Find information about the", a("R package", href = "https://embark-lab.github.io/TeenGrowth/index.html")),
+             p("Find detailed information about the development and use of the TeenGrowth app in the following", a("preprint", href = "https://osf.io/preprints/psyarxiv/vwj7s?view_only="))
     )
-  )  # End of tabsetPanel
+  )  # End of Background and FAQ Tab
+
+  # Close the tabsetPanel
 )  # End of fluidPage
