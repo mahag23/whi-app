@@ -22,20 +22,7 @@ server <- function(input, output, session) {
                  "xlsx" = readxl::read_excel(file$datapath),
                  "xls" = readxl::read_excel(file$datapath),
                  stop("Unsupported file type"))
-
-    date_columns <- c("DOB", "Date")  # Add or modify column names as needed
-    for (col in date_columns) {
-      if (col %in% names(df)) {
-        if (is.numeric(df[[col]])) {
-          df[[col]] <- as.Date(df[[col]], origin = "1899-12-30")
-        } else if (is.character(df[[col]])) {
-          df[[col]] <- as.Date(df[[col]], tryFormats = c("%m/%d/%y", "%Y-%m-%d"))  # Adjust the date formats based on your data
-        }
-        df[[col]] <- format(df[[col]], "%Y-%m-%d")  # Convert to ISO format
-      }
     }
-    return(df)
-  }
 
   data <- reactive({
     if (input$data_source == "upload") {
@@ -50,6 +37,9 @@ server <- function(input, output, session) {
     }
   })
 
+
+
+
   dob_for_demo_participants <- reactive({
     if (input$data_source == 'demo') {
       switch(as.character(input$person_id),
@@ -63,6 +53,34 @@ server <- function(input, output, session) {
     }
   })
 
+  # Helper function to parse and format dates
+  parse_and_format_dates <- function(df, date_columns) {
+    for (col in date_columns) {
+      if (!is.null(col) && col %in% names(df)) {
+        print(paste("Parsing column:", col))
+        print(paste("Original values:", paste(df[[col]], collapse = ", ")))
+        if (is.numeric(df[[col]])) {
+          df[[col]] <- as.Date(df[[col]], origin = "1899-12-30")
+        } else if (is.character(df[[col]])) {
+        tryCatch({
+          df[[col]] <- parse_date_time(df[[col]], orders = c("mdy", "ymd", "dmy"))
+          df[[col]] <- format(df[[col]], "%Y-%m-%d")  # Convert to ISO format
+          df[[col]] <- as.Date(df[[col]])  # Ensure column is Date class
+
+        }, error = function(e) {
+          print(paste("Error parsing column:", col, "with message:", e$message))
+          df[[col]] <- NA  # Set problematic values to NA
+        })
+      }
+    }}
+    return(df)
+  }
+  parsed_data <- reactive({
+    df <- data()
+    date_columns <- c(input$dob_column, input$assessment_date_column)  # Get the date columns from the user inputs
+    df <- parse_and_format_dates(df, date_columns)
+    return(df)
+  })
 
   # Reactive to check if DOB is missing
   dob_missing <- reactive({
@@ -164,7 +182,7 @@ server <- function(input, output, session) {
   clean_data_messages <- reactiveVal(NULL)
 
   observeEvent(input$submit_button, {
-    df <- data()
+    df <- parsed_data()
     print("Initial data:")
     print(head(df))
     # Add constants to the dataset if `input$data_type` is "one" and not using demo data
@@ -194,6 +212,11 @@ server <- function(input, output, session) {
         updateTextInput(session, "aao_column", value = "ed_age_onset")
       }
     }
+
+    df <- df %>%
+      mutate(
+        across(all_of(c(input$dob_column, input$assessment_date_column)), as.Date)
+      )
     # Debugging: Print updated data
     print("Updated data:")
     print(head(df))
@@ -313,7 +336,7 @@ server <- function(input, output, session) {
   clean_data_messages <- reactiveVal(NULL)
 
   observeEvent(input$submit_button, {
-    df <- data()
+    df <- parsed_data()
 
     # Add constants to the dataset if `input$data_type` is "one" and not using demo data
     if (input$data_source != "demo" && input$data_type == "one") {
@@ -556,6 +579,18 @@ server <- function(input, output, session) {
       selected_data
     }
 
+    # Check if forecast_input has 0 rows
+    if (nrow(forecast_input) == 0) {
+      show_error_modal("No data available for prediction.
+                       Please ensure there is growth data available after age 2.1 and prior to the age of eating disorder onset.")
+      return(NULL)
+    }
+    # Check if forecast_input has only 1 row and confidence interval is not 'User-Defined'
+    if (nrow(forecast_input) == 1 && input$confidence_interval != 'User-Defined') {
+      show_error_modal("Prediction interval cannot be computed with only
+                       1 datapoint available prior to ED onset -- use BMIz window = 1 for prediction window")
+      return(NULL)
+    }
     forecast_data <- if (input$confidence_interval == 'User-Defined') {
       TeenGrowth::forecast_bmi(
         data = forecast_input,
@@ -733,8 +768,9 @@ server <- function(input, output, session) {
     model_type_friendly <- model_type_names[input$model_type]
 
     Prediction_interval_names <- c(
-      "90" = "90%",
+      "99" = "99%",
       "95" = "95%",
+      "80" = "80%",
       "User-Defined" = "BMIz Window = 1 (+/- 0.5 BMIz from the central value of the prediction)"
     )
     Prediction_interval_friendly <- Prediction_interval_names[input$confidence_interval]

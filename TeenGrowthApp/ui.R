@@ -14,16 +14,21 @@ ui <- fluidPage(
       }
     "))
   ),
+  # Header container with flexbox for positioning logos and title
   tags$div(
-    class = "logo-container",
-    tags$img(src = "logo.png", alt = "Logo")
+    class = "header-container",
+    tags$div(class = "logo-container-left",
+             tags$img(src = "TeenGrowth.png", alt = "TeenGrowth Logo", style = "width: 150px; height: auto;")
+    ),
+    tags$div(
+      class = "title-container",
+      h4("Individualized expected body weights for young people with eating disorders")
+    ),
+    tags$div(class = "logo-container-right",
+             tags$img(src = "logo.png", alt = "Logo", style = "width: 80px; height: auto;")
+    )
   ),
-  # Title and subtitle for the Shiny app
-  fluidRow(
-    column(12,
-           h1("TeenGrowth"),
-           h4("Individualized expected body weights for young people with eating disorders"))
-  ),
+
   useShinyjs(),  # Initialize shinyjs
   tabsetPanel(
     id = "main_tabs",
@@ -36,8 +41,8 @@ ui <- fluidPage(
                               selected = "demo"),
                  conditionalPanel(
                    condition = "input.data_source == 'upload'",
-                   fileInput("file1", "Upload Excel or CSV File with Growth Chart Data",
-                             accept = c(".xlsx", ".xls", ".csv"))
+                   fileInput("file1", "Upload Excel (.xlsx) or CSV File with Growth Chart Data",
+                             accept = c(".xlsx", ".csv"))
                  ),
                  conditionalPanel(
                    condition = "input.data_source == 'upload'",
@@ -121,6 +126,7 @@ ui <- fluidPage(
                              )),
                  selectInput("confidence_interval", "Select the Prediction Interval:",
                              choices = c("BMIz Window = 1" = "User-Defined",
+                                         "80%" = 80,
                                          "95%" = 95,
                                          "99%" = 99)),
                  conditionalPanel(
@@ -174,15 +180,25 @@ ui <- fluidPage(
              h3("Background"),
              p("The TeenGrowth app is designed to provide individualized expected body weights for young people with eating disorders. It leverages individuals' growth chart data to make accurate predictions and help in planning weight restoration."),
              h3("FAQ"),
+             h4("What is the purpose of this app?"),
+             p("The purpose of the TeenGrowth app is to assist healthcare providers and researchers in understanding and planning weight restoration for young individuals with eating disorders. It provides individualized weight goals, based on prior growth data."),
              h4("How do I use this app?"),
              p("To use TeenGrowth, start by inputting data in the 'Data Input' tab. You can use demo data or upload your own data. Next, specify the data columns in the 'Data Specification' tab. Once your data is cleaned, proceed to the 'Model Selection' tab to run and view the models. Finally, you can plan for weight restoration in the 'Weight Restoration Planning' tab. Steps must proceed in order for everything to work appropriately."),
              h4("What kind of data can I upload?"),
-             p("You can upload data in CSV or Excel format. Ensure your data contains the necessary information in columns such as age, anthropometric indicators, and other relevant information as specified in the 'Data Input' tab. In order for models to work properly, you must have at least TWO datapoints for each participant prior to ED onst to use 95% and 99% models, and ONE datapoint prior to ED onset to use the +/- 0.5 BMIz models."),
+             p("You can upload data in .csv or .xlsx format. Ensure your data contains the necessary information in columns such as age,
+               anthropometric indicators, and other relevant information as specified in the 'Data Input' tab.
+               In order for models to work properly, you must have at least TWO datapoints for each participant after age 2.1 years and prior to ED onst to use 80%, 95% and 99% models, and ONE datapoint prior to ED onset to use the BMIz window = 1 models."),
+             h4("How far out can I predict?"),
+             p("The TeenGrowth app can predict expected BMIz and weight up to 10 years after the most recent data point PRIOR to ED onset. For instance, if the most recent datapoint prior to ED onset was at age 11, prediction will go to age 21."),
+             h4("Will this work for young adults?"),
+             p("The TeenGrowth app is designed for individuals with ED onset prior to age 21, and can be used used up to age 36.
+               Age 21 BMIz reference values are used to forecast from age 21-36 and currently assume stability after age 20."),
              h4("I'm getting stuck! My models won't run"),
-             p("Sparse data (< 4 prediction points) will occasionally produce obvious modeling errors with 95% and 99% prediction intervals -- try +/- 0.5 BMIz models if errors emerge with other models. The TeenGrowth Package is still in very early phases of development and there are likely to be unanticipated bugs and issues -- particularly with tricky data formats like dates. Dr. Schaumberg (kschaumberg@wisc.edu) is happy to help troubleshoot any issues you may be having. Please reach out to her with any questions or concerns."),
-             h4("What is the purpose of this app?"),
-             p("The purpose of the TeenGrowth app is to assist healthcare providers and researchers in understanding and planning weight restoration for young individuals with eating disorders. It provides individualized weight goals, based on prior growth data."),
-             h3("Where can I find more information?"),
+             p("Sparse data (< 4 prediction points) will occasionally produce obvious modeling errors with 80%, 95%, and 99% prediction intervals -- try +/- 0.5 BMIz models if errors emerge with other models. The TeenGrowth Package is still in very early phases of development and there are likely to be unanticipated bugs and issues -- particularly with tricky data formats like dates. Dr. Schaumberg (kschaumberg@wisc.edu) is happy to help troubleshoot any issues you may be having. Please reach out to her with any questions or concerns."),
+             h4("Do I have to specify sex for trans and non-binary individuals?"),
+             p("The TeenGrowth app currently relies on CDC and WHO growth chart reference data,
+             which are sex-specific, and therefore a binary sex specification is required."),
+             h3("Package and Preprint Details"),
              p("Find information about the", a("R package", href = "https://embark-lab.github.io/TeenGrowth/index.html")),
              p("Find detailed information about the development and use of the TeenGrowth app in the following", a("preprint", href = "https://osf.io/preprints/psyarxiv/vwj7s?view_only="))
     )

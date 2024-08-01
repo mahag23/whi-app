@@ -35,7 +35,6 @@ p, div, span, input, select, button, table {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400; /* Normal weight */
 }
-
 /* Adjusting container background */
 .container-background {
   background-color: #EEECE1;
@@ -43,18 +42,36 @@ p, div, span, input, select, button, table {
   border: 1px solid #ccc; /* Keeps the grey outline */
   border-radius: 5px;
 }
-/* Logo styling */
-.logo-container {
-  position: absolute;
-  top: 10px; /* Adjust as needed */
-  right: 10px; /* Adjust as needed */
-  z-index: 1000; /* Ensure the logo is on top */
+
+/* Header container with flexbox */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #EEECE1;
 }
 
-.logo-container img {
-  width: 100px; /* Adjust as needed */
-  height: auto;
+/* Logo styling for left */
+.logo-container-left img {
+  width: 150px !important;
+  height: auto !important;
 }
+
+/* Logo styling for right */
+.logo-container-right img {
+  width: 80px !important;
+  height: auto !important;
+}
+
+/* Title container */
+.title-container {
+  flex-grow: 1;
+  text-align: center;
+}
+
+
+
 /* Ensuring the text in input fields is also visible with the new background */
 input::placeholder, textarea::placeholder {
   color: #1A4F66;
