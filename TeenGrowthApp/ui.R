@@ -167,13 +167,24 @@ ui <- fluidPage(
                  h3("Weight Restoration Planning"),
                  uiOutput("conditional_weight_restoration_inputs"),
                  actionButton("plot_weight_restoration", "Plot Weight Restoration Plan"),
+                 actionButton("plot_pct_restore", "Plot BMI Percentile Restoration"),
                  actionButton("back_button_weight_restoration", "Back")
                ),
                mainPanel(
-                 div(class = "custom-plot", plotOutput("wt_restore_graph"))
+                 tabsetPanel(
+                   tabPanel("Weight Restoration Plan",
+                            div(class = "custom-plot", plotOutput("wt_restore_graph")),
+                            p("Note. Weight restoration plans are based on current  height if adult height is not available. Weight projections will adjust if height increases")
+                   ),
+
+                   tabPanel("BMI Percentile Restoration",
+                            div(class = "custom-plot", plotOutput("pct_restore_graph"))
+                   )
+                 )
                )
-             )
-    ),  # End of Weight Restoration Planning Tab
+
+               )
+             ),  # End of Weight Restoration Planning Tab
 
     # Background and FAQ Tab
     tabPanel("Background and FAQ",

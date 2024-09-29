@@ -36,16 +36,25 @@ server <- function(input, output, session) {
       demo_data
     }
   })
-
-
-
+tx_start_date_for_demo_participants <- reactive({
+  if (input$data_source == 'demo') {
+    switch(as.character(input$person_id),
+           "1" = Sys.Date() - lubridate::days(120), # Example: Tx start date for participant 1
+           "2" = Sys.Date() - lubridate::days(150), # Example: Tx start date for participant 2
+           "3" = Sys.Date() - lubridate::days(180), # Example: Tx start date for participant 3
+           NULL
+    )
+  } else {
+    Sys.Date()
+  }
+})
 
   dob_for_demo_participants <- reactive({
     if (input$data_source == 'demo') {
       switch(as.character(input$person_id),
-             "1" = Sys.Date() - lubridate::years(16),
-             "2" = Sys.Date() - lubridate::duration(years = 15),
-             "3" = Sys.Date() - lubridate::duration(years = 14.3),
+             "1" = Sys.Date() - lubridate::duration(years = 16.3),
+             "2" = Sys.Date() - lubridate::duration(years = 15.3),
+             "3" = Sys.Date() - lubridate::duration(years = 15.5),
              NULL
       )
     } else {
@@ -573,6 +582,11 @@ server <- function(input, output, session) {
     selected_data <- selected_data %>%
       mutate(agemos_ed_onset = ifelse(!is.na(agemos_ed_onset), agemos_ed_onset, ed_aoo_input * 12))
 
+    # QC check: Print selected_data after applying ED onset logic
+    print("Final selected_data for forecast input after ED onset logic:")
+    print(head(selected_data))
+
+
     forecast_input <- if (!all(is.na(selected_data$agemos_ed_onset))) {
       selected_data %>% filter(agemos < agemos_ed_onset[1])
     } else {
@@ -930,6 +944,8 @@ server <- function(input, output, session) {
         } else {
           input$sex
         }
+        cat("Selected participant's sex:", sex, "\n")
+
         current_ht <- if (!is.null(input$height_value_column) && input$height_value_column %in% colnames(cleaned_data)) {
           cleaned_data[[input$height_value_column]]
         } else {
@@ -1061,6 +1077,178 @@ server <- function(input, output, session) {
     }
   })
 
+  observeEvent(input$plot_pct_restore, {
+    if (is.null(input$tx_start_date) || !check_model_and_summary()) {
+      showModal(modalDialog(
+        title = "Missing Information",
+        if (is.null(input$tx_start_date)) {
+          "Please input the Treatment Start Date."
+        } else {
+          "Please go back to the Model Selection tab and ensure a model is selected and summary is rendered."
+        },
+        footer = modalButton("OK")
+      ))
+    } else {
+      output$pct_restore_graph <- renderPlot({
+        req(model_data())
+        req(data())
+        data <- model_data()
+        raw_data <- data()
+
+        if (!is.null(input$id_column)) {
+          raw_data <- raw_data %>%
+            filter(!!sym(input$id_column) == input$person_id)
+        }
+
+        cleaned_data <- data$selected_data
+
+        # Define 'dob' and other variables before using them
+        dob <- if ("dob" %in% input$age_columns) {
+          dob_colname <- input$dob_column
+          if (!is.null(input$id_column)) {
+            id_colname <- input$id_column
+            dob_value <- raw_data %>%
+              filter(!!sym(id_colname) == input$person_id) %>%
+              pull(!!sym(dob_colname))
+            as.Date(dob_value[1])
+          } else {
+            dob_value <- raw_data %>%
+              pull(!!sym(dob_colname))
+            as.Date(dob_value[1])
+          }
+        } else if (!is.null(input$dob)) {
+          as.Date(input$dob, origin = "1970-01-01")
+        } else {
+          NA
+        }
+
+        sex <- if ("sex" %in% input$demographics_columns) {
+          cleaned_data$sex[1]
+        } else {
+          input$sex
+        }
+
+        current_ht <- if (!is.null(input$height_value_column) && input$height_value_column %in% colnames(cleaned_data)) {
+          cleaned_data[[input$height_value_column]]
+        } else {
+          input$current_height
+        }
+
+        age_current_ht <- if ("age_adult_height" %in% input$demographics_columns) {
+          input$age_adult_height
+        } else {
+          input$age_current_height
+        }
+
+        adult_ht <- if ("adult_height" %in% input$demographics_columns) {
+          adult_ht_col <- input$adult_height_column
+          id_colname <- input$id_column
+          adult_ht_value <- raw_data %>%
+            filter(!!sym(id_colname) == input$person_id) %>%
+            pull(!!sym(adult_ht_col))
+          adult_ht_value[1]
+        } else if (!is.null(input$adult_height_in)) {
+          input$adult_height_in
+        } else {
+          NA
+        }
+
+        age_adult_ht <- if ("age_adult_height" %in% input$demographics_columns || "adult_height " %in% input$demographics_columns) {
+          agemos_adult_ht <- cleaned_data %>%
+            pull(agemos_adult_ht)
+          agemos_adult_ht <- agemos_adult_ht[1]
+          if (input$age_unit == 'years') {
+            agemos_adult_ht / 12
+          } else if (input$age_unit == 'months') {
+            agemos_adult_ht
+          } else if (input$age_unit == 'days') {
+            agemos_adult_ht / 365.25
+          } else {
+            NA
+          }
+        } else if (!is.null(input$age_adult_height)) {
+          input$age_adult_height
+        } else {
+          NA
+        }
+
+        ed_aoo <- if ("ed_age_onset" %in% input$demographics_columns) {
+          ed_aoo_vec <- cleaned_data %>%
+            pull(agemos_ed_onset)
+          agemos_ed_aoo <- ed_aoo_vec[1]
+          if (input$age_unit == 'years') {
+            agemos_ed_aoo / 12
+          } else if (input$age_unit == 'months') {
+            agemos_ed_aoo
+          } else if (input$age_unit == 'days') {
+            agemos_ed_aoo / 365.25
+          } else {
+            NA
+          }
+        } else if (!is.null(input$ed_aoo)) {
+          input$ed_aoo
+        } else {
+          NA
+        }
+
+        tx_start_date <- if (!is.null(input$tx_start_date) && !is.na(input$tx_start_date)) {
+          as.Date(input$tx_start_date, origin = "1970-01-01")
+        } else {
+          NA
+        }
+
+        intake_wt <- if (!is.null(input$intake_wt) && !is.na(input$intake_wt)) {
+          input$intake_wt
+        } else {
+          NULL
+        }
+
+        # Now that variables are defined, proceed to use them
+        filtered_data <- pct_plot_clean(
+          raw_data,
+          age_col_name = input$age_column,
+          date_assessed_col_name = input$assessment_date_column,
+          ht_col_name = input$height_value_column,
+          wt_col_name = input$weight_column,
+          age_unit = input$age_unit,
+          ht_unit = input$height_unit,
+          wt_unit = input$weight_unit,
+          bmi_col_name = input$bmi_column,
+          bmiz_col_name = input$bmi_z_column,
+          pct_col_name = input$bmi_percentile_column,
+          data_source = 'cdc',
+          dob = dob,
+          sex = "M",
+          current_ht = current_ht,
+          age_current_ht = age_current_ht,
+          adult_ht = adult_ht,
+          age_adult_ht = age_adult_ht,
+          ed_aoo = ed_aoo,
+          tx_start_date = tx_start_date,
+          intake_wt = intake_wt
+        )
+
+        # Proceed with plotting
+        forecast_data <- data$forecast_data %>%
+          filter(id == input$person_id)
+
+        # print head of forecast data
+        tryCatch({
+          TeenGrowth::Pct_Restore_Plot(
+            clean_data = filtered_data,
+            forecast_data = forecast_data
+          )
+        }, error = function(e) {
+          showModal(modalDialog(
+            title = "Error",
+            paste("Error generating the BMI percentile restoration plot:", e$message),
+            footer = modalButton("OK")
+          ))
+          cat("Error in plotting BMI percentile restoration:", e$message, "\n")
+        })
+      }, bg = "transparent")
+    }
+  })
 
 
   output$data_cleaned <- reactive({
@@ -1087,11 +1275,9 @@ server <- function(input, output, session) {
     inputs <- list()
 
     if (TRUE) {  # Always needed
-      inputs <- append(inputs, list(dateInput("tx_start_date", "Treatment Start Date:", value = NULL)))
+      inputs <- append(inputs, list(dateInput("tx_start_date", "Treatment Start Date:", value = tx_start_date_for_demo_participants())))
     }
-    # if (TRUE) {  # Always needed
-    #   inputs <- append(inputs, list(numericInput("intake_wt", "Intake Weight (lbs):", value = NULL, min = 1)))
-    # }
+
     if (is.null(input$adult_height_in) & !("adult_height" %in%(input$demographic_columns))) {  # Need only if no adult height
       inputs <- append(inputs, list(numericInput("current_height", "Current Height (in):", value = NULL, min = 1)))
     }
