@@ -789,6 +789,11 @@ tx_start_date_for_demo_participants <- reactive({
     )
     Prediction_interval_friendly <- Prediction_interval_names[input$confidence_interval]
 
+    forecast_data <- data$forecast_data
+    eBMI_pct <- pnorm(mean(forecast_data$eBMIz, na.rm = TRUE))*100
+    upper_eBMI_pct <- pnorm(mean(forecast_data$upper_eBMIz, na.rm = TRUE))*100
+    lower_eBMI_pct <- pnorm(mean(forecast_data$lower_eBMIz, na.rm = TRUE))*100
+
     selected_data <- data$selected_data
     ed_aoo <- selected_data$agemos_ed_onset[1]
     adult_ht_in <- selected_data$adult_height_in[1]
@@ -802,6 +807,8 @@ tx_start_date_for_demo_participants <- reactive({
     current_weight_lb <- most_recent$weight_lb[1]
     current_weight_kg <- most_recent$weight_kg[1]
     current_bmi <- most_recent$bmi[1]
+    current_bmi_pct <- pnorm(most_recent$bmiz[1])*100
+
 
     one_year_future <- (most_recent$agemos[1] + 12)
     eWeight_one_year <- data$forecast_data %>%
@@ -874,6 +881,12 @@ tx_start_date_for_demo_participants <- reactive({
         round(current_bmi, 1),
         "Not Provided"
       ), "</p>",
+      "<p><b>Most Recent BMI Percentile:</b> ", ifelse(
+        !is.na(current_bmi_pct),
+        round(current_bmi_pct, 0),
+        "Not Provided"
+      ), "</p>",
+      "<p><b>Expected BMI Percentile:</b> ", paste0(round(eBMI_pct, 0), " (", round(lower_eBMI_pct, 0), ", ", round(upper_eBMI_pct, 0), ")"), "</p>",
       "<p><b>Expected BMI (+1 Year):</b> ", expected_bmi_one_year, "</p>",
       "<p><b>Expected Weight (+1 Year):</b> ", ifelse(
         expected_weight_lbs_one_year != "NA (NA, NA)",
