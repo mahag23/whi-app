@@ -53,8 +53,8 @@ tx_start_date_for_demo_participants <- reactive({
     if (input$data_source == 'demo') {
       switch(as.character(input$person_id),
              "1" = Sys.Date() - lubridate::duration(years = 16.3),
-             "2" = Sys.Date() - lubridate::duration(years = 15.3),
-             "3" = Sys.Date() - lubridate::duration(years = 15.5),
+             "2" = Sys.Date() - lubridate::duration(years = 15.4),
+             "3" = Sys.Date() - lubridate::duration(years = 15.8),
              NULL
       )
     } else {
@@ -868,7 +868,7 @@ tx_start_date_for_demo_participants <- reactive({
       "<p><b>Most Recent Age with Available Data:</b> ", sprintf("%.1f years", current_age), "</p>",
       "<p><b>Most Recent Height:</b> ", ifelse(
         !is.na(current_height_in),
-        paste0(round(current_height_in, 1), " in / ", round(current_height_cm, 1), " cm"),
+        paste0(round(current_height_in, 1), " in / ", round(current_height_cm, 0), " cm"),
         "Not Provided"
       ), "</p>",
       "<p><b>Most Recent Weight:</b> ", ifelse(
