@@ -104,7 +104,7 @@ tx_start_date_for_demo_participants <- reactive({
     }
   })
 
-        ###### 1.2.2 Parse Dates ######
+      ###### 1.2.2 Parse Dates ######
   parsed_data <- reactive({
     df <- data()
     date_columns <- c(input$dob_column, input$assessment_date_column)  # Get the date columns from the user inputs
@@ -164,6 +164,7 @@ tx_start_date_for_demo_participants <- reactive({
       "age" = list(textInput("age_column", "Name of the age column:", value = get_default_value("age_column", "age"))),
       "sex" = list(textInput("sex_column", "Name of the sex column (for growth chart reference):", value = get_default_value("sex_column", "sex"))),
       "adult_height" = list(textInput("adult_height_column", "Name of the adult height column:", value = get_default_value("adult_height_column", "adult_height_in"))),
+      "age_adult_height" = list(textInput("age_adult_height_column", "Name of the age at adult height column:", value = get_default_value("age_adult_height_column", "agemos_adult_ht"))),
       "dob" = list(textInput("dob_column", "Name of the date of birth column:")),
       "assessment_date" = list(textInput("assessment_date_column", "Name of the date of assessment column:")),
       "bmi" = list(textInput("bmi_column", "Name of the BMI column:")),
@@ -188,16 +189,19 @@ tx_start_date_for_demo_participants <- reactive({
       inputs <- append(inputs, columns_list[["assessment_date"]])
     }
 
-    if (input$data_source != "demo") {
       if (input$data_type == "one") {
         if (!("Dates" %in% input$age_columns) && !("age" %in% input$age_columns)) {
           inputs <- append(inputs, list(dateInput("dob", "What is the individual's date of birth?")))
         }
+        # add an optional age at adult height input
+          if (!("age_adult_height" %in% input$demographics_columns)) {
+            inputs <- append(inputs, list(
+              numericInput("aheight_age", "What is the individual's age at adult height (Optional)?", value = NULL, min = 1, max = 25)
+            ))
+          }
         if (!("sex" %in% input$demographics_columns)) {
-          inputs <- append(inputs, list(selectInput("sex", "What is the individual's sex at birth?", choices = c("Female", "Male")))) }
-
-
-      }
+          inputs <- append(inputs, list(selectInput("sex", "What is the individual's sex at birth?", choices = c("Female", "Male"))))
+          }
     }
 
     do.call(tagList, inputs)
@@ -229,12 +233,12 @@ tx_start_date_for_demo_participants <- reactive({
 
   ##### 3.2 Things that happen when submit button is pushed to clean data #####
 
-   observeEvent(input$submit_button, {
+  observeEvent(input$submit_button, {
     df <- parsed_data()
     print("Initial data:")
     print(head(df))
 
-     # Add constants to the dataset if `input$data_type` is "one" and not using demo data
+    # Add constants if uploading single participant
     if (input$data_source != "demo" && input$data_type == "one") {
       if (!("dob" %in% colnames(df)) && !is.null(input$dob)) {
         df <- df %>% mutate(dob = input$dob)
@@ -246,15 +250,30 @@ tx_start_date_for_demo_participants <- reactive({
       }
       if (!("sex" %in% colnames(df)) && !is.null(input$sex)) {
         df <- df %>% mutate(sex = input$sex)
-   #     updateTextInput(session, "sex_column", value = "sex")
       }
-      if (!("adult_height" %in% colnames(df)) && !is.null(input$aheight)) {
-        df <- df %>% mutate(adult_height = input$aheight)
-        updateTextInput(session, "adult_height_column", value = "adult_height")
+      # Decide whether we truly have an "age_adult_height" column
+      if ("age_adult_height" %in% names(df)) {            # comes from the file
+        age_adult_ht_col <- "age_adult_height"
+
+      } else if (!is.null(input$aheight_age) &&            # typed in the UI
+                 input$aheight_age != "") {
+
+        df <- df %>% mutate(age_adult_height = as.numeric(input$aheight_age))
+        age_adult_ht_col <- "age_adult_height"
+
+      } else {                                             # optional & missing
+        age_adult_ht_col <- NULL
       }
-      if (!("age_adult_height" %in% colnames(df)) && !is.null(input$aheight_age)) {
-        df <- df %>% mutate(age_adult_height = input$aheight_age)
-        updateTextInput(session, "age_adult_height_column", value = "age_adult_height")
+
+      # add the age-at-adult-height column (years) if the user supplied one
+      if (!"age_adult_height" %in% names(df) && !is.null(input$aheight_age)) {
+
+        df <- df %>%
+          mutate(age_adult_height = as.numeric(input$aheight_age))   # <── force numeric
+
+        updateTextInput(session,
+                        inputId = "age_adult_height_column",
+                        value   = "age_adult_height")
       }
       if (!("ed_age_onset" %in% colnames(df)) && !is.null(input$symptoms)) {
         df <- df %>% mutate(ed_age_onset = input$symptoms)
@@ -263,19 +282,17 @@ tx_start_date_for_demo_participants <- reactive({
     }
 
     df <- df %>%
-      mutate(
-        across(all_of(c(input$dob_column, input$assessment_date_column)), as.Date)
-      )
-    # Debugging: Print updated data
+      mutate(across(all_of(c(input$dob_column, input$assessment_date_column)), as.Date))
+
     print("Updated data:")
     print(head(df))
-
 
     required_columns <- c(
       if ("id" %in% input$demographics_columns) input$id_column else NULL,
       if ("age" %in% input$age_columns) input$age_column else NULL,
       if ("sex" %in% input$demographics_columns) input$sex_column else NULL,
       if ("adult_height" %in% input$demographics_columns) input$adult_height_column else NULL,
+      if ("age_adult_height" %in% input$demographics_columns) input$age_adult_height_column else NULL,
       if ("Dates" %in% input$age_columns) input$dob_column else NULL,
       if ("Dates" %in% input$age_columns) input$assessment_date_column else NULL,
       if ("bmi" %in% input$anthropometric_columns) input$bmi_column else NULL,
@@ -297,7 +314,7 @@ tx_start_date_for_demo_participants <- reactive({
       return(NULL)
     }
 
-      messages <- capture.output({
+    messages <- capture.output({
       cleaned <- TeenGrowth::clean_data(
         df,
         id_col_name = if ("id" %in% input$demographics_columns) input$id_column else NULL,
@@ -314,9 +331,28 @@ tx_start_date_for_demo_participants <- reactive({
         bmiz_col_name = if ("bmi_z" %in% input$anthropometric_columns) input$bmi_z_column else NULL,
         pct_col_name = if ("bmi_percentile" %in% input$anthropometric_columns) input$bmi_percentile_column else NULL,
         data_source = 'cdc',
-        adult_ht_col_name = if ("adult_height" %in% input$demographics_columns) input$adult_height_column else if (!is.null(input$aheight)) 'adult_height' else NULL,
+        adult_ht_col_name = if (!is.null(input$adult_height_column)) input$adult_height_column else NULL,
+        age_adult_ht_col_name = age_adult_ht_col,
         ed_aoo_col_name = if ("ed_age_onset" %in% input$demographics_columns) input$aao_column else if (!is.null(input$symptoms)) 'ed_age_onset' else NULL
       )
+
+      # Reattach DOB if needed
+      original_df <- parsed_data()
+      dob_column_name <- input$dob_column
+      id_column_name <- input$id_column
+
+      if (!is.null(dob_column_name) && dob_column_name != "" && dob_column_name %in% names(original_df)) {
+        if (!is.null(input$data_type) && input$data_type == "multiple" &&
+            !is.null(id_column_name) && id_column_name %in% names(original_df) && id_column_name %in% names(cleaned)) {
+          dob_map <- original_df %>% select(!!sym(id_column_name), !!sym(dob_column_name))
+          cleaned <- cleaned %>%
+            left_join(dob_map, by = id_column_name)
+          names(cleaned)[names(cleaned) == dob_column_name] <- "dob"
+        } else {
+          cleaned$dob <- original_df[[dob_column_name]][1]
+        }
+      }
+
       cleaned_data(cleaned)
     }, type = "message")
 
@@ -324,61 +360,6 @@ tx_start_date_for_demo_participants <- reactive({
     cleaned_data_status(TRUE)
 
     updateSelectInput(session, "person_id", choices = unique(cleaned_data()[["id"]]))
-  })
-
-
-
-
-  ##### 3.2 Check and see if additional Data is Needed (for later plots) #####
-  observe({
-    req(input$person_id)
-    cleaned_df <- cleaned_data()
-    selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
-
-    adult_height_needed <- all(is.na(selected_data$adult_height_in))
-    age_adult_height_needed <- all(is.na(selected_data$agemos_adult_ht))
-    ed_aoo_needed <- all(is.na(selected_data$agemos_ed_onset))
-
-    tx_start_date_needed <- TRUE  # Always needed
-    intake_wt_needed <- TRUE  # Always needed
-    current_height_needed <- adult_height_needed  # Needed if adult height is not provided
-    age_current_height_needed <- age_adult_height_needed  # Needed if age at adult height is not provided
-
-    output$adult_height_needed <- reactive({ adult_height_needed })
-    output$age_adult_height_needed <- reactive({ age_adult_height_needed })
-    output$ed_aoo_needed <- reactive({ ed_aoo_needed })
-    output$tx_start_date_needed <- reactive({ tx_start_date_needed })
-    output$intake_wt_needed <- reactive({ intake_wt_needed })
-    output$current_height_needed <- reactive({ current_height_needed })
-    output$age_current_height_needed <- reactive({ age_current_height_needed })
-
-    outputOptions(output, "adult_height_needed", suspendWhenHidden = FALSE)
-    outputOptions(output, "age_adult_height_needed", suspendWhenHidden = FALSE)
-    outputOptions(output, "ed_aoo_needed", suspendWhenHidden = FALSE)
-    outputOptions(output, "tx_start_date_needed", suspendWhenHidden = FALSE)
-    outputOptions(output, "intake_wt_needed", suspendWhenHidden = FALSE)
-    outputOptions(output, "current_height_needed", suspendWhenHidden = FALSE)
-    outputOptions(output, "age_current_height_needed", suspendWhenHidden = FALSE)
-  })
-  ##### 3.3 Dynamic UI elements if they are missing (for use in model selection) #####
-  output$conditional_model_inputs <- renderUI({
-    req(input$person_id)
-    cleaned_df <- cleaned_data()
-    selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
-
-    inputs <- list()
-
-    if (all(is.na(selected_data$agemos_ed_onset))) {
-      inputs <- append(inputs, list(numericInput("ed_aoo", "Eating Disorder Age of Onset (Years):", value = 12, min = 1)))
-    }
-    if (all(is.na(selected_data$adult_height_in))) {
-      inputs <- append(inputs, list(numericInput("adult_height_in", "Adult Height (in):", value = NULL, min = 1)))
-    }
-    if (all(is.na(selected_data$agemos_adult_ht))) {
-      inputs <- append(inputs, list(numericInput("age_adult_height", "Age at Adult Height (years):", value = NULL, min = 1)))
-    }
-
-    do.call(tagList, inputs)
   })
 
   ##### 3.4 Output Cleaned and raw data #####
@@ -404,12 +385,31 @@ tx_start_date_for_demo_participants <- reactive({
 
 #### 4. Model Data ####
   ##### 4.1. Runs Model when 'Run Model' is selected in Model Selection tab #####
+  observe({
+    req(cleaned_data())
+    n_ids <- length(unique(cleaned_data()$id))
+
+    if (n_ids <= 1) {
+      shinyjs::hide("person_id")
+    } else {
+      shinyjs::show("person_id")
+    }
+  })
 
   model_data <- eventReactive(input$run_model, {
     req(cleaned_data(), input$person_id, input$model_type, input$confidence_interval)
 
     ed_aoo_input <- as.numeric(age_in_months(input$ed_aoo, age_unit = input$age_unit))
     cleaned_df <- cleaned_data()
+
+if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
+  # Only filter by ID if the user uploaded multiple participants
+  selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
+} else {
+  # Otherwise, for a single participant, use all rows
+  selected_data <- cleaned_df
+}
+
     selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
 
     if (all(is.na(selected_data$adult_height_in))) {
@@ -700,7 +700,7 @@ tx_start_date_for_demo_participants <- reactive({
     cleaned_data_status() && !is.null(model_data()) && input$model_type != "" && input$confidence_interval != ""
   })
 #### 5. Weight Restoration Planning #####
-##### 5.1 Weight restoration Inputs #####
+  ##### 5.1 Weight restoration Inputs #####
   output$conditional_weight_restoration_inputs <- renderUI({
     req(input$person_id)
     cleaned_df <- cleaned_data()
@@ -739,7 +739,7 @@ tx_start_date_for_demo_participants <- reactive({
     do.call(tagList, inputs)
   })
 
-##### 5.2 Weight Restoration Plot #####
+  ##### 5.2 Weight Restoration Plot #####
   observeEvent(input$plot_weight_restoration, {
     if (is.null(input$tx_start_date) || !check_model_and_summary()) {
       showModal(modalDialog(
@@ -922,7 +922,7 @@ tx_start_date_for_demo_participants <- reactive({
       }, bg = "transparent")
     }
   })
-##### 5.3 BMI Percentile Restoration Plot #####
+  ##### 5.3 BMI Percentile Restoration Plot #####
   observeEvent(input$plot_pct_restore, {
     if (is.null(input$tx_start_date) || !check_model_and_summary()) {
       showModal(modalDialog(

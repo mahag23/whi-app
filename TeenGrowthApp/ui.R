@@ -59,6 +59,7 @@ ui <- fluidPage(
                                         choices = list("ID (Required if n > 1)" = "id",
                                                        "Sex (for reference charts; defaults to Female If NA)" = "sex",
                                                        "Adult Height (Optional)" = "adult_height",
+                                                       "Age at Adult Height (Optional)" = "age_adult_height",
                                                        "Eating Disorder Age of Onset (Optional)" = "ed_age_onset")
                      ),
                      h5("Age at Assessment (Choose One)"),
@@ -211,7 +212,7 @@ ui <- fluidPage(
              which are sex-specific, and therefore a binary sex specification is required."),
              h3("Package and Preprint Details"),
              p("Find information about the", a("R package", href = "https://embark-lab.github.io/TeenGrowth/index.html")),
-             p("Find detailed information about the development and use of the TeenGrowth app in the following", a("preprint", href = "https://osf.io/preprints/psyarxiv/vwj7s?view_only="))
+             p("Find detailed information about the development and use of the TeenGrowth app in the following", a("article", href = "https://pubmed.ncbi.nlm.nih.gov/39760235/"))
     )
   )  # End of Background and FAQ Tab
 
