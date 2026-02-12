@@ -13,7 +13,7 @@ library(plotly)      # For interactive plots
 # Load LMS once at the top of your server.R
 lms_df <- read.csv("bmi-age-2022.csv")
 lms_df <- lms_df %>%
- # Convert growth chart age to months
+  # Convert growth chart age to months
   arrange(agemos) %>%
   distinct(agemos, .keep_all = TRUE)
 
@@ -24,71 +24,100 @@ get_S <- function(agemos) approx(lms_df$agemos, lms_df$S, xout = agemos, rule = 
 
 server <- function(input, output, session) {
 
-demo_data <- TeenGrowth::demo
-observeEvent(input$to_fasting, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Fasting")
-})
+  rv <- reactiveValues(
+    step = 1,
+    responses = list(),
 
-observeEvent(input$back_to_restrict, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Restriction")
-})
+    n_surgeries = 0,
+    n_hosp = 0,
+    ed_hospital_times = 0,
+    n_injury = 0,
+    medical_conditions = 0,
+    mental_disorder_dx = 0,
+    n_meds = 0,
 
-observeEvent(input$to_uwl, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Unintended Weightloss")
-})
+    surgery_index = 1,
+    hosp_index = 1,
+    ed_hosp_index = 1,
+    injury_index = 1,
+    med_index = 1,
+    mh_index = 1,
+    meds_index = 1
+  )
 
-observeEvent(input$back_to_uwl, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Unintended Weightloss")
-})
+  rv_survey <- reactiveValues(row = NULL)
 
-observeEvent(input$to_vomit, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
-})
+  observeEvent(input$mh_upload, {
+    req(input$mh_upload)
+    df <- read.csv(input$mh_upload$datapath, stringsAsFactors = FALSE)
+    rv_survey$row <- df[1, , drop = FALSE]
+  })
 
-observeEvent(input$back_to_vomit, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
-})
+  demo_data <- TeenGrowth::demo
+  observeEvent(input$to_fasting, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Fasting")
+  })
 
-observeEvent(input$to_lax, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Laxative")
-})
+  observeEvent(input$back_to_restrict, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Restriction")
+  })
 
-observeEvent(input$back_to_lax, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Laxative")
-})
+  observeEvent(input$to_uwl, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Unintended Weightloss")
+  })
 
-observeEvent(input$to_diur, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Diuretic")
-})
+  observeEvent(input$back_to_uwl, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Unintended Weightloss")
+  })
 
-observeEvent(input$back_to_diur, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Diuretic")
-})
+  observeEvent(input$to_vomit, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
+  })
 
-observeEvent(input$to_binge, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Binge")
-})
+  observeEvent(input$back_to_vomit, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
+  })
 
-observeEvent(input$back_to_binge, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Binge")
-})
+  observeEvent(input$to_lax, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Laxative")
+  })
 
-observeEvent(input$to_exercise, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Exercise")
-})
+  observeEvent(input$back_to_lax, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Laxative")
+  })
 
-observeEvent(input$back_to_exercise, {
-  updateTabsetPanel(session, "behav_tabs", selected = "Exercise")
-})
+  observeEvent(input$to_diur, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Diuretic")
+  })
+
+  observeEvent(input$back_to_diur, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Diuretic")
+  })
+
+  observeEvent(input$to_binge, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Binge")
+  })
+
+  observeEvent(input$back_to_binge, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Binge")
+  })
+
+  observeEvent(input$to_exercise, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Exercise")
+  })
+
+  observeEvent(input$back_to_exercise, {
+    updateTabsetPanel(session, "behav_tabs", selected = "Exercise")
+  })
 
 
-observeEvent(input$to_edtabs, {
-  updateTabsetPanel(session, "ed_behaviors", selected = "Pt.2 ED Behaviors")
-})
-####medical history#####
+  observeEvent(input$to_edtabs, {
+    updateTabsetPanel(session, "ed_behaviors", selected = "Pt.2 ED Behaviors")
+  })
+  ####medical history#####
 
-observeEvent(input$open_ques, {
-  runjs("
+  observeEvent(input$open_ques, {
+    runjs("
       var refWindow = window.open('', 'InterviewWindow', 'width=600,height=600,resizable=yes,scrollbars=yes');
       refWindow.document.write('<h3>PT 2. Interview Questions</h3>');
       refWindow.document.write ('<p> Has there ever been a time when you a) tried to limit the amount of food you ate to influence your weight, b) tried to exclude foods from your diet to influence your weight, and/or c) tried to follow rules (such as following a calorie limit) to influence your weight?</p>');
@@ -96,7 +125,7 @@ observeEvent(input$open_ques, {
 
       refWindow.document.close();
     ")
-})
+  })
   # JS to open a new window and write some content
   observeEvent(input$open_ref, {
     runjs("
@@ -114,555 +143,493 @@ observeEvent(input$open_ques, {
   })
 
 
-rv <- reactiveValues(
-  step = 1,
-  responses = list(),
+  rv3 <- reactiveValues(
+    step = 1,
+    uwl_index = 1,
+    n_episodes = 1
+  )
 
-  # counts (never NULL)
-  n_surgeries = 0,
-  n_hosp = 0,
-  ed_hospital_times = 0,
-  n_injury = 0,
-  medical_conditions = 0,
-  mental_disorder_dx = 0,
-  n_meds = 0,
+  output$uwl_questions <- renderUI({
+    switch(as.character(rv3$step),
 
-  # indices (never NULL)
-  surgery_index = 1,
-  hosp_index = 1,
-  ed_hosp_index = 1,
-  injury_index = 1,
-  med_index = 1,
-  mh_index = 1,
-  meds_index = 1
-)
-
-
-rv3 <- reactiveValues(
-  step = 1,
-  uwl_index = 1,
-  n_episodes = 1
-)
-
-output$uwl_questions <- renderUI({
-  switch(as.character(rv3$step),
-
-         # STEP 1: Yes/No
-         "1" = tagList(
-           h4("Unintentional Weight Loss"),
-           radioButtons("uwl_yn",
-                        "Has there ever been a time when weight was lost unintentionally?",
-                        choices = c("No" = 0, "Yes" = 1),
-                        inline = TRUE),
-           conditionalPanel(
-             condition = "input.uwl_yn == 1",
-             numericInput(
-               "uwl_index",
-               "Number of periods of UWL",
-               value = 1,
-               min = 1
+           # STEP 1: Yes/No
+           "1" = tagList(
+             h4("Unintentional Weight Loss"),
+             radioButtons("uwl_yn",
+                          "Has there ever been a time when weight was lost unintentionally?",
+                          choices = c("No" = 0, "Yes" = 1),
+                          inline = TRUE),
+             conditionalPanel(
+               condition = "input.uwl_yn == 1",
+               numericInput(
+                 "uwl_index",
+                 "Number of periods of UWL",
+                 value = 1,
+                 min = 1
+               )
              )
+           ),
+
+           # STEP 2: Episode details
+           "2" = tagList(
+             h4(paste("Episode", rv3$uwl_index)),
+             textInput("uwl_reason", "Reason for weight loss"),
+             dateInput("uwl_start", "Start date"),
+             dateInput("uwl_end", "End date"),
+             numericInput("uwl_lost", "Amount of weight lost", value = NA),
+             numericInput("uwl_duration", "How long at this lower weight (months)", value = NA),
+             numericInput("uwl_regain", "Amount of weight regained", value = NA),
+             textAreaInput("uwl_notes", "Notes")
            )
-         ),
-
-         # STEP 2: Episode details
-         "2" = tagList(
-           h4(paste("Episode", rv3$uwl_index)),
-           textInput("uwl_reason", "Reason for weight loss"),
-           dateInput("uwl_start", "Start date"),
-           dateInput("uwl_end", "End date"),
-           numericInput("uwl_lost", "Amount of weight lost", value = NA),
-           numericInput("uwl_duration", "How long at this lower weight (months)", value = NA),
-           numericInput("uwl_regain", "Amount of weight regained", value = NA),
-           textAreaInput("uwl_notes", "Notes")
-         )
-  )
-})
-
-observeEvent(input$uwl_next, {
-
-  # STEP 1 — Yes/No
-  if (rv3$step == 1) {
-    req(input$uwl_yn)
-
-    if (input$uwl_yn == 1) {
-      rv3$n_episodes <- input$uwl_index
-      rv3$uwl_index <- 1
-      rv3$step <- 2
-    } else {
-      # Go to next tab if "No"
-      updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
-    }
-  }
-
-  # STEP 2 — Episode details
-  else if (rv3$step == 2) {
-    req(input$uwl_reason, input$uwl_start)
-
-    # Here you could save input for this episode
-    # e.g., store in a reactiveValues list or dataframe
-
-    # Move to next episode or finish
-    if (rv3$uwl_index < rv3$n_episodes) {
-      rv3$uwl_index <- rv3$uwl_index + 1
-      # Clear inputs for next episode
-      updateTextInput(session, "uwl_reason", value = "")
-      updateDateInput(session, "uwl_start", value = NA)
-      updateDateInput(session, "uwl_end", value = NA)
-      updateNumericInput(session, "uwl_lost", value = NA)
-      updateNumericInput(session, "uwl_duration", value = NA)
-      updateNumericInput(session, "uwl_regain", value = NA)
-      updateTextAreaInput(session, "uwl_notes", value = "")
-    } else {
-      # Finished all episodes
-      updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
-    }
-  }
-
-})
-
-
-
-
-
-output$main_ui <- renderUI({
-
-  switch(
-    as.character(rv$step),
-
-    # -------------------------------
-    # 1. Intro######
-    # -------------------------------
-    "1" = tagList(
-      h4("PART 1: Medical History Overview"),
-      p("I will begin the interview by asking you about your medical and mental health history at various points in your life.")
-    ),
-
-    # -------------------------------
-    # 2–3. Surgeries#####
-    # -------------------------------
-    "2" = tagList(
-      h4("Surgeries"),
-      numericInput("n_surgeries", "How many surgeries have you had?", 0, min = 0)
-    ),
-
-    "3" = tagList(
-      h4(paste("Surgery", rv$surgery_index)),
-      textInput("med_hx_surgery", "What was the surgery?"),
-      dateInput("surg_date", "Date of surgery", value = NULL),
-      textAreaInput("surg_eat", "Impact on eating (N/A if none)", rows = 3),
-      dateInput("surg_eat_normal", "Date eating returned to normal (N/A if none)", value = NULL),
-      textAreaInput("surg_act", "Impact on activity (N/A if none)", rows = 3),
-      dateInput("surg_act_normal", "Date activity returned to normal (N/A if none)", value = NULL),
-      textAreaInput("surg_comp", "Complications (N/A if none)", rows = 3)
-    ),
-
-    # -------------------------------
-    # 4–5. General Hospitalizations#####
-    # -------------------------------
-    "4" = tagList(
-      h4("Hospitalizations"),
-      numericInput("n_hosp", "How many times have you been hospitalized?", 0, min = 0)
-    ),
-
-    "5" = tagList(
-      h4(paste("Hospitalization", rv$hosp_index)),
-      textInput("med_hx_hospital", "Reason for hospitalization"),
-      dateInput("hospital_admit_", "Date of admission", value = NULL),
-      dateInput("hospital_discharge_", "Date of discharge", value = NULL),
-      textAreaInput("hosp_eat", "Impact on eating (N/A if none)", rows = 3),
-      dateInput("hosp_eat_normal", "Date eating returned to normal (N/A if none)", value = NULL),
-      textAreaInput("hosp_act", "Impact on activity (N/A if none)", rows = 3),
-      dateInput("hosp_act_normal", "Date activity returned to normal (N/A if none)", value = NULL)
-    ),
-
-    # -------------------------------
-    # 6–7. ED Hospitalizations#####
-    # -------------------------------
-    "6" = tagList(
-      h4("Eating Disorder–Related Hospitalizations"),
-      radioButtons(
-        "ed_hosp_yn",
-        "Have you ever been hospitalized for an eating disorder (IOP, PHP, residential, or inpatient)?",
-        choices = c("No" = 0, "Yes" = 1),
-        inline = TRUE
-      ),
-      conditionalPanel(
-        condition = "input.ed_hosp_yn == 1",
-        numericInput(
-          "ed_hospital_times",
-          "How many times have you been hospitalized for an eating disorder?",
-          value = 1,
-          min = 1
-        )
-      )
-    ),
-
-
-    "7" = tagList(
-      h4(paste("ED Hospitalization", rv$ed_hosp_index)),
-      selectInput(
-        "ed_hospital_loc",
-        "Level of care",
-        choices = c(
-          "Intensive Outpatient Program (IOP)",
-          "Partial Hospitalization Program (PHP)",
-          "Residential",
-          "Inpatient"
-        )
-      ),
-      dateInput("ed_hospital_admit_", "Date admitted", value = NULL),
-      dateInput("ed_hospital_discharge_", "Date discharged", value = NULL),
-      textAreaInput(
-        "ed_notes",
-        "Any additional information about this admission?",
-        rows = 3
-      )
-    ),
-
-    # -------------------------------
-    # 8–9. Injuries#####
-    # -------------------------------
-    "8" = tagList(
-      h4("Injuries"),
-      numericInput("n_injury", "How many injuries have you had?", 0, min = 0)
-    ),
-
-    "9" = tagList(
-      h4(paste("Injury", rv$injury_index)),
-      textInput("med_hx_injury", "Type of injury"),
-      dateInput("med_hx_when_injury", "Date of injury", value = NULL),
-      textAreaInput("injury_eat", "Impact on eating (N/A if none)", rows = 3),
-      dateInput("injury_eat_normal", "Date eating returned to normal (N/A if none)", value = NULL),
-      textAreaInput("injury_act", "Impact on activity (N/A if none)", rows = 3),
-      dateInput("injury_act_normal", "Date activity returned to normal (N/A if none)", value = NULL),
-      textAreaInput("injury_treat", "Treatment received (N/A if none)", rows = 3),
-      dateInput("injury_treat_start", "Treatment start date (N/A if none)", value = NULL),
-      dateInput("injury_treat_end", "Treatment end date (N/A if none)", value = NULL)
-    ),
-
-    # -------------------------------
-    # 10–11. Medical Conditions######
-    # -------------------------------
-    "10" = tagList(
-      h4("Medical Conditions"),
-      numericInput(
-        "medical_conditions",
-        "How many medical conditions have you been diagnosed with?",
-        0,
-        min = 0
-      )
-    ),
-
-    "11" = tagList(
-      h4(paste("Medical Condition", rv$med_index)),
-      textInput("medical_condition_name_", "Condition name"),
-      dateInput("medical_conditon_diagnosis_", "Date of diagnosis", value = NULL),
-      dateInput("symptom_onset_", "Date of symptom onsent", value = NULL),
-      textAreaInput("med_notes", "Additional details (optional)", rows = 3)
-    ),
-
-    # -------------------------------
-    # 12–13. Mental Health####
-    # -------------------------------
-    "12" = tagList(
-      h4("Mental Health History"),
-      numericInput(
-        "mental_disorder_dx",
-        "How many mental health diagnoses have you had?",
-        0,
-        min = 0
-      )
-    ),
-
-    "13" = tagList(
-      h4(paste("Mental Health Diagnosis", rv$mh_index)),
-      textInput("mental_condition_name_", "Diagnosis"),
-      dateInput("mental_dx_", "Date of diagnosis", value = NULL),
-      textAreaInput("mh_notes", "Additional details (optional)", rows = 3)
-    ),
-
-    # -------------------------------
-    # 14–15. Medications######
-    # -------------------------------
-    "14" = tagList(
-      h4("Medications (Taken ≥ 3 months)"),
-      numericInput("medication_no", "How many medications?", 0, min = 0)
-    ),
-
-    "15" = tagList(
-      h4(paste("Medication", rv$meds_index)),
-      textInput("med_name_", "Medication name"),
-      textInput("med_dosage_", "Dosage"),
-      dateInput("med_start_date_", "Start date", value = NULL),
-      dateInput("med_end_date_", "End date (leave blank if ongoing)", value = NULL),
-      radioButtons(
-        "meds_yn",
-        "Taken Consistently?",
-        choices = c("No" = 0, "Yes" = 1),
-        inline = TRUE
-      ),
-
-      textAreaInput("meds_reason", "Notes", rows = 2)
     )
-  )
-})
-
-# Initialize reactive values
-
-# Observe Next button
-observeEvent(input$next_btn, {
-
-  # ----------------------
-  # STEP 1: Intro / Step 1
-  # ----------------------
-  if (rv$step == 1) {
-    rv$step <- 2
-  }
-
-  # ----------------------
-  # STEP 2: Surgeries
-  # ----------------------
-  else if (rv$step == 2) {
-    rv$n_surgeries <- ifelse(is.na(input$n_surgeries), 0, input$n_surgeries)
-
-    rv$surgery_index <- 1
-    rv$step <- ifelse(rv$n_surgeries > 0, 3, 4)
-  }
-
-  # ----------------------
-  # STEP 3: Surgery details
-  # ----------------------
-  else if (rv$step == 3) {
-    rv$responses[[paste0("surgery_", rv$surgery_index)]] <- list(
-      name = input$med_hx_surgery,
-      date = input$surg_date,
-      eating = input$surg_eat,
-      activity = input$surg_act,
-      complications = input$surg_comp
-    )
-    rv$surgery_index <- rv$surgery_index + 1
-    if (rv$surgery_index > rv$n_surgeries) rv$step <- 4
-  }
-
-  # ----------------------
-  # STEP 4: Hospitalizations
-  # ----------------------
-  else if (rv$step == 4) {
-    rv$n_hosp <- ifelse(is.na(input$n_hosp), 0, input$n_hosp)
-
-    rv$hosp_index <- 1
-    rv$step <- ifelse(rv$n_hosp > 0, 5, 6)
-  }
-
-  # ----------------------
-  # STEP 5: Hospitalization details
-  # ----------------------
-  else if (rv$step == 5) {
-    rv$responses[[paste0("hospital_", rv$hosp_index)]] <- list(
-      reason = input$med_hx_hospital,
-      admit = input$hospital_admit_,
-      discharge = input$hospital_discharge_,
-      eating = input$hosp_eat,
-      activity = input$hosp_act
-    )
-    rv$hosp_index <- rv$hosp_index + 1
-    if (rv$hosp_index > rv$n_hosp) rv$step <- 6
-  }
-
-  # ----------------------
-  # STEP 6: ED hospitalizations Y/N
-  # ----------------------
-  else if (rv$step == 6) {
-    req(input$ed_hosp_yn)
-
-    if (input$ed_hosp_yn == 1) {
-      rv$ed_hospital_times <- ifelse(is.na(input$ed_hospital_times), 0, input$ed_hospital_times)
-
-      rv$ed_hosp_index <- 1
-      rv$step <- 7
-    } else {
-      rv$step <- 8
-    }
-  }
-
-  # ----------------------
-  # STEP 7: ED hospitalization details
-  # ----------------------
-  else if (rv$step == 7) {
-    rv$responses[[paste0("ed_hospitalization_", rv$ed_hosp_index)]] <- list(
-      level_of_care = input$ed_hospital_loc,
-      admit_date = input$ed_hospital_admit_,
-      discharge_date = input$ed_hospital_discharge_,
-      notes = input$ed_notes
-    )
-    rv$ed_hosp_index <- rv$ed_hosp_index + 1
-    if (rv$ed_hosp_index > rv$ed_hospital_times) rv$step <- 8
-  }
-
-  # ----------------------
-  # STEP 8: Injuries
-  # ----------------------
-  else if (rv$step == 8) {
-    rv$n_injury <- ifelse(is.na(input$n_injury), 0, input$n_injury)
-
-    rv$injury_index <- 1
-    rv$step <- ifelse(rv$n_injury > 0, 9, 10)
-  }
-
-  # ----------------------
-  # STEP 9: Injury details
-  # ----------------------
-  else if (rv$step == 9) {
-    rv$responses[[paste0("injury_", rv$injury_index)]] <- list(
-      type = input$med_hx_injury,
-      date = input$med_hx_when_injury,
-      treatment = input$injury_treat,
-      treatmentstart = input$injury_treat_start,
-      treatmentend = input$injury_treat_end,
-      eating = input$injury_eat,
-      activity = input$injury_act,
-      eatingnormal = input$injury_eat_normal,
-      activitynormal = input$injury_act_normal
-    )
-    rv$injury_index <- rv$injury_index + 1
-    if (rv$injury_index > rv$n_injury) rv$step <- 10
-  }
-
-  # ----------------------
-  # STEP 10: Medical conditions
-  # ----------------------
-  else if (rv$step == 10) {
-    rv$medical_conditions <- ifelse(is.na(input$medical_conditions), 0, input$medical_conditions)
-    rv$med_index <- 1
-    rv$step <- ifelse(rv$medical_conditions > 0, 11, 12)
-  }
-
-  else if (rv$step == 11) {
-    rv$responses[[paste0("medical_", rv$med_index)]] <- list(
-      name = input$medical_condition_name_,
-      dx = input$medical_conditon_diagnosis_,
-      symonset = input$symptom_onset_,
-      notes = input$med_notes
-    )
-    rv$med_index <- rv$med_index + 1
-    if (rv$med_index > rv$medical_conditions) rv$step <- 12
-  }
-
-  # ----------------------
-  # STEP 12: Mental health
-  # ----------------------
-  else if (rv$step == 12) {
-    rv$mental_disorder_dx <- ifelse(is.na(input$mental_disorder_dx), 0, input$mental_disorder_dx)
-
-    rv$mh_index <- 1
-    rv$step <- ifelse(rv$mental_disorder_dx > 0, 13, 14)
-  }
-
-  else if (rv$step == 13) {
-    rv$responses[[paste0("mh_", rv$mh_index)]] <- list(
-      diagnosis = input$mental_condition_name_,
-      dx = input$mental_dx_,
-      notes = input$mh_notes
-    )
-    rv$mh_index <- rv$mh_index + 1
-    if (rv$mh_index > rv$mental_disorder_dx) rv$step <- 14
-  }
-
-  # ----------------------
-  # STEP 14: Medications
-  # ----------------------
-  else if (rv$step == 14) {
-    rv$medication_no <- ifelse(is.na(input$medication_no), 0, input$medication_no)
-    rv$meds_index <- 1
-    rv$step <- ifelse(rv$medication_no > 0, 15, 16)
-  }
-
-  else if (rv$step == 15) {
-    rv$responses[[paste0("med_", rv$meds_index)]] <- list(
-      name = input$med_name_,
-      start = input$meds_start_date_,
-      end = input$meds_end_date_,
-      dosage = input$med_dosage_,
-      consistent = input$meds_yn,
-      reason = input$meds_reason
-    )
-    rv$meds_index <- rv$meds_index + 1
-    if (rv$meds_index > rv$medication_no) {
-      rv$step <- 16  # final step complete
-      updateTabsetPanel(session, "ed_behaviors", selected = "Pt.2 ED Behaviors")
-    }
-  }
   })
 
-###done go to next tab
+  observeEvent(input$uwl_next, {
+
+    # STEP 1 — Yes/No
+    if (rv3$step == 1) {
+      req(input$uwl_yn)
+
+      if (input$uwl_yn == 1) {
+        rv3$n_episodes <- input$uwl_index
+        rv3$uwl_index <- 1
+        rv3$step <- 2
+      } else {
+        # Go to next tab if "No"
+        updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
+      }
+    }
+
+    # STEP 2 — Episode details
+    else if (rv3$step == 2) {
+      req(input$uwl_reason, input$uwl_start)
+
+      # Here you could save input for this episode
+      # e.g., store in a reactiveValues list or dataframe
+
+      # Move to next episode or finish
+      if (rv3$uwl_index < rv3$n_episodes) {
+        rv3$uwl_index <- rv3$uwl_index + 1
+        # Clear inputs for next episode
+        updateTextInput(session, "uwl_reason", value = "")
+        updateDateInput(session, "uwl_start", value = NA)
+        updateDateInput(session, "uwl_end", value = NA)
+        updateNumericInput(session, "uwl_lost", value = NA)
+        updateNumericInput(session, "uwl_duration", value = NA)
+        updateNumericInput(session, "uwl_regain", value = NA)
+        updateTextAreaInput(session, "uwl_notes", value = "")
+      } else {
+        # Finished all episodes
+        updateTabsetPanel(session, "behav_tabs", selected = "Vomiting")
+      }
+    }
+
+  })
+
+
+
+
+  # ============================
+  # MAIN UI
+  # ============================
+  output$main_ui <- renderUI({
+
+    switch(
+      as.character(rv$step),
+
+      "1" = tagList(
+        h4("PART 1: Medical History Overview"),
+        p("I will begin the interview by asking you about your medical and mental health history at various points in your life.")
+      ),
+
+      "2" = tagList(
+        h4("Surgeries"),
+        numericInput("n_surgeries", "How many surgeries have you had?", value = 0, min = 0)
+      ),
+
+      "3" = tagList(
+        h4(paste("Surgery", rv$surgery_index)),
+        textInput("med_hx_surgery", "What was the surgery?"),
+        dateInput("surg_date", "Date of surgery", value = NULL),
+        textAreaInput("surg_eat", "Impact on eating (N/A if none)", rows = 3),
+        dateInput("surg_eat_normal", "Date eating returned to normal (N/A if none)", value = NULL),
+        textAreaInput("surg_act", "Impact on activity (N/A if none)", rows = 3),
+        dateInput("surg_act_normal", "Date activity returned to normal (N/A if none)", value = NULL),
+        textAreaInput("surg_comp", "Complications (N/A if none)", rows = 3)
+      ),
+
+      "4" = tagList(
+        h4("Hospitalizations"),
+        numericInput("n_hosp", "How many times have you been hospitalized?", value = 0, min = 0)
+      ),
+
+      "5" = tagList(
+        h4(paste("Hospitalization", rv$hosp_index)),
+        textInput("med_hx_hospital", "Reason for hospitalization"),
+        dateInput("hospital_admit_", "Date of admission", value = NULL),
+        dateInput("hospital_discharge_", "Date of discharge", value = NULL),
+        textAreaInput("hosp_eat", "Impact on eating (N/A if none)", rows = 3),
+        dateInput("hosp_eat_normal", "Date eating returned to normal (N/A if none)", value = NULL),
+        textAreaInput("hosp_act", "Impact on activity (N/A if none)", rows = 3),
+        dateInput("hosp_act_normal", "Date activity returned to normal (N/A if none)", value = NULL)
+      ),
+
+      "6" = tagList(
+        h4("Eating Disorder–Related Hospitalizations"),
+        radioButtons(
+          "ed_hosp_yn",
+          "Have you ever been hospitalized for an eating disorder (IOP, PHP, residential, or inpatient)?",
+          choices = c("No" = 0, "Yes" = 1),
+          inline = TRUE
+        ),
+        conditionalPanel(
+          condition = "input.ed_hosp_yn == 1",
+          numericInput(
+            "ed_hospital_times",
+            "How many times have you been hospitalized for an eating disorder?",
+            value = 0,   # <-- allow 0
+            min = 0      # <-- allow 0
+          )
+        )
+      ),
+
+      "7" = tagList(
+        h4(paste("ED Hospitalization", rv$ed_hosp_index)),
+        selectInput(
+          "ed_hospital_loc",
+          "Level of care",
+          choices = c(
+            "Intensive Outpatient Program (IOP)",
+            "Partial Hospitalization Program (PHP)",
+            "Residential",
+            "Inpatient"
+          )
+        ),
+        dateInput("ed_hospital_admit_", "Date admitted", value = NULL),
+        dateInput("ed_hospital_discharge_", "Date discharged", value = NULL),
+        textAreaInput("ed_notes", "Any additional information about this admission?", rows = 3)
+      ),
+
+      "8" = tagList(
+        h4("Injuries"),
+        numericInput("n_injury", "How many injuries have you had?", value = 0, min = 0)
+      ),
+
+      "9" = tagList(
+        h4(paste("Injury", rv$injury_index)),
+        textInput("med_hx_injury", "Type of injury"),
+        dateInput("med_hx_when_injury", "Date of injury", value = NULL),
+        textAreaInput("injury_eat", "Impact on eating (N/A if none)", rows = 3),
+        dateInput("injury_eat_normal", "Date eating returned to normal (N/A if none)", value = NULL),
+        textAreaInput("injury_act", "Impact on activity (N/A if none)", rows = 3),
+        dateInput("injury_act_normal", "Date activity returned to normal (N/A if none)", value = NULL),
+        textAreaInput("injury_treat", "Treatment received (N/A if none)", rows = 3),
+        dateInput("injury_treat_start", "Treatment start date (N/A if none)", value = NULL),
+        dateInput("injury_treat_end", "Treatment end date (N/A if none)", value = NULL)
+      ),
+
+      "10" = tagList(
+        h4("Medical Conditions"),
+        numericInput("medical_conditions", "How many medical conditions have you been diagnosed with?", value = 0, min = 0)
+      ),
+
+      "11" = tagList(
+        h4(paste("Medical Condition", rv$med_index)),
+        textInput("medical_condition_name_", "Condition name"),
+        dateInput("medical_conditon_diagnosis_", "Date of diagnosis", value = NULL),
+        dateInput("symptom_onset_", "Date of symptom onsent", value = NULL),
+        textAreaInput("med_notes", "Additional details (optional)", rows = 3)
+      ),
+
+      "12" = tagList(
+        h4("Mental Health History"),
+        numericInput("mental_disorder_dx", "How many mental health diagnoses have you had?", value = 0, min = 0)
+      ),
+
+      "13" = tagList(
+        h4(paste("Mental Health Diagnosis", rv$mh_index)),
+        textInput("mental_condition_name_", "Diagnosis"),
+        dateInput("mental_dx_", "Date of diagnosis", value = NULL),
+        textAreaInput("mh_notes", "Additional details (optional)", rows = 3)
+      ),
+
+      "14" = tagList(
+        h4("Medications (Taken ≥ 3 months)"),
+        numericInput("medication_no", "How many medications?", value = 0, min = 0)
+      ),
+
+      "15" = tagList(
+        h4(paste("Medication", rv$meds_index)),
+        textInput("med_name_", "Medication name"),
+        textInput("med_dosage_", "Dosage"),
+        dateInput("med_start_date_", "Start date", value = NULL),
+        dateInput("med_end_date_", "End date (leave blank if ongoing)", value = NULL),
+        radioButtons(
+          "meds_yn",
+          "Taken Consistently?",
+          choices = c("No" = 0, "Yes" = 1),
+          inline = TRUE
+        ),
+        textAreaInput("meds_reason", "Notes", rows = 2)
+      )
+    )
+  })
+
+
+
+  # ============================
+  # OPTIONAL: PREFILL HOOK
+  # (requires rv_survey$row set by your upload code)
+  # ============================
+  input_exists <- function(id) id %in% names(input)
+
+  val_or_null <- function(x) {
+    if (is.null(x) || length(x) == 0) return(NULL)
+    x <- x[1]
+    if (is.na(x)) return(NULL)
+    if (is.character(x) && trimws(x) == "") return(NULL)
+    x
+  }
+
+  safe_text  <- function(id, v) { if (!input_exists(id)) return(); v <- val_or_null(v); if (!is.null(v)) updateTextInput(session, id, value = as.character(v)) }
+  safe_area  <- function(id, v) { if (!input_exists(id)) return(); v <- val_or_null(v); if (!is.null(v)) updateTextAreaInput(session, id, value = as.character(v)) }
+  safe_num   <- function(id, v) { if (!input_exists(id)) return(); v <- val_or_null(v); if (!is.null(v)) updateNumericInput(session, id, value = suppressWarnings(as.numeric(v))) }
+  safe_radio <- function(id, v) { if (!input_exists(id)) return(); v <- val_or_null(v); if (!is.null(v)) updateRadioButtons(session, id, selected = as.character(v)) }
+  safe_date  <- function(id, v) {
+    if (!input_exists(id)) return()
+    v <- val_or_null(v)
+    if (is.null(v)) return()
+    d <- suppressWarnings(as.Date(v))
+    if (!is.na(d)) updateDateInput(session, id, value = d)
+  }
+  pick_ed_loc <- function(row, i) {
+    # Your UI choices:
+    opts <- c(
+      "Intensive Outpatient Program (IOP)",
+      "Partial Hospitalization Program (PHP)",
+      "Residential",
+      "Inpatient"
+    )
+    # In file: ed_hospital_loc{i}___1..___4 (___5 exists but your UI doesn't have it)
+    hits <- sapply(1:4, function(k) {
+      v <- row[[paste0("ed_hospital_loc", i, "___", k)]]
+      !is.null(v) && !is.na(v) && suppressWarnings(as.numeric(v)) == 1
+    })
+    if (any(hits)) return(opts[which(hits)[1]])
+    NULL
+  }
+
+  prefill_from_row <- function(row) {
+
+    # -------------------------
+    # SURGERIES
+    # -------------------------
+    if (rv$step == 2) {
+      safe_num("n_surgeries", row[["n_surgeries"]])
+    }
+
+    if (rv$step == 3) {
+      i <- rv$surgery_index
+      safe_text("med_hx_surgery", row[[paste0("med_hx_surgery", i)]])
+      safe_date("surg_date",      row[[paste0("surg_date", i)]])
+      safe_area("surg_eat",       row[[paste0("surg_eat", i)]])
+      safe_date("surg_eat_normal",row[[paste0("surg_eat_normal", i)]])
+      safe_area("surg_act",       row[[paste0("surg_act", i)]])
+      safe_date("surg_act_normal",row[[paste0("surg_act_normal", i)]])
+      safe_area("surg_comp",      row[[paste0("surg_comp", i)]])
+    }
+
+    # -------------------------
+    # HOSPITALIZATIONS
+    # -------------------------
+    if (rv$step == 4) {
+      safe_num("n_hosp", row[["n_hospital"]])
+    }
+
+    if (rv$step == 5) {
+      i <- rv$hosp_index
+      safe_text("med_hx_hospital", row[[paste0("med_hx_hospital", i)]])
+      safe_date("hospital_admit_", row[[paste0("hospital_admit_", i)]])
+      safe_date("hospital_discharge_", row[[paste0("hospital_discharge_", i)]])
+      safe_area("hosp_eat", row[[paste0("hosp_eat", i)]])
+      safe_date("hosp_eat_normal", row[[paste0("hosp_eat_normal", i)]])
+      safe_area("hosp_act", row[[paste0("hosp_act", i)]])
+      safe_date("hosp_act_normal", row[[paste0("hosp_act_normal", i)]])
+    }
+
+    # -------------------------
+    # ED HOSPITALIZATIONS
+    # -------------------------
+    if (rv$step == 6) {
+      safe_radio("ed_hosp_yn", row[["ed_hospital"]])
+      safe_num("ed_hospital_times", row[["ed_hospital_times"]])
+    }
+
+    if (rv$step == 7) {
+      i <- rv$ed_hosp_index
+
+      loc <- pick_ed_loc(row, i)
+      if (!is.null(loc) && ("ed_hospital_loc" %in% names(input))) {
+        updateSelectInput(session, "ed_hospital_loc", selected = loc)
+      }
+
+      safe_date("ed_hospital_admit_", row[[paste0("ed_hospital_admit_", i)]])
+      safe_date("ed_hospital_discharge_", row[[paste0("ed_hospital_discharge_", i)]])
+      safe_area("ed_notes", row[[paste0("ed_notes", i)]])
+    }
+
+    # -------------------------
+    # INJURIES
+    # -------------------------
+    if (rv$step == 8) {
+      safe_num("n_injury", row[["n_injury"]])
+    }
+
+    if (rv$step == 9) {
+      i <- rv$injury_index
+      safe_text("med_hx_injury", row[[paste0("med_hx_injury", i)]])
+      safe_date("med_hx_when_injury", row[[paste0("med_hx_when_injury", i)]])
+      safe_area("injury_eat", row[[paste0("injury_eat", i)]])
+      safe_date("injury_eat_normal", row[[paste0("injury_eat_normal", i)]])
+      safe_area("injury_act", row[[paste0("injury_act", i)]])
+      safe_date("injury_act_normal", row[[paste0("injury_act_normal", i)]])
+      safe_area("injury_treat", row[[paste0("injury_treat", i)]])
+      safe_date("injury_treat_start", row[[paste0("injury_treat_start", i)]])
+      safe_date("injury_treat_end", row[[paste0("injury_treat_end", i)]])
+    }
+
+    # -------------------------
+    # MEDICAL CONDITIONS
+    # -------------------------
+    if (rv$step == 10) {
+      safe_num("medical_conditions", row[["medical_conditions"]])
+    }
+
+    if (rv$step == 11) {
+      i <- rv$med_index
+      safe_text("medical_condition_name_", row[[paste0("medical_condition_name_", i)]])
+      safe_date("medical_conditon_diagnosis_", row[[paste0("medical_conditon_diagnosis_", i)]])
+      safe_date("symptom_onset_", row[[paste0("symptom_onset_", i)]])
+      safe_area("med_notes", row[[paste0("medical_notes_", i)]])
+    }
+
+    # -------------------------
+    # MENTAL HEALTH
+    # -------------------------
+    if (rv$step == 12) {
+      safe_num("mental_disorder_dx", row[["mental_disorder_dx"]])
+    }
+
+    if (rv$step == 13) {
+      i <- rv$mh_index
+      safe_text("mental_condition_name_", row[[paste0("mental_condition_name_", i)]])
+      safe_date("mental_dx_", row[[paste0("mental_dx_", i)]])
+      safe_area("mh_notes", row[[paste0("mental_notes_", i)]])
+    }
+
+    # -------------------------
+    # MEDICATIONS
+    # -------------------------
+    if (rv$step == 14) {
+      safe_num("medication_no", row[["medication_no"]])
+    }
+
+    if (rv$step == 15) {
+      i <- rv$meds_index
+      safe_text("med_name_", row[[paste0("med_name_", i)]])
+      safe_text("med_dosage_", row[[paste0("med_dosage_", i)]])
+      safe_date("med_start_date_", row[[paste0("med_start_date_", i)]])
+      safe_date("med_end_date_", row[[paste0("med_end_date_", i)]])
+    }
+  }
+
+  observeEvent(
+    list(
+      rv$step, rv$surgery_index, rv$hosp_index, rv$ed_hosp_index,
+      rv$injury_index, rv$med_index, rv$mh_index, rv$meds_index,
+      rv_survey$row
+    ),
+    {
+      req(rv_survey$row)
+
+      # Wait until renderUI has inserted the inputs for this step
+      session$onFlushed(function() {
+        prefill_from_row(rv_survey$row)
+      }, once = TRUE)
+    },
+    ignoreInit = FALSE
+  )
+
+
+
+  ###done go to next tab
   # ----------------------
   # FINAL STEP: Move to ED behaviors
 
 
-rv1 <- reactiveValues(
-  step = 1,
-  responses = list(),
-  stress_index = 1
-)
-####SOCIAL HISTORY PT. 3 #####
-output$social_ui <- renderUI({
+  rv1 <- reactiveValues(
+    step = 1,
+    responses = list(),
+    stress_index = 1
+  )
+  ####SOCIAL HISTORY PT. 3 #####
+  output$social_ui <- renderUI({
 
-  switch(
-    as.character(rv$step),
+    switch(
+      as.character(rv$step),
 
-    # -------------------------------
-    # 1. Intro######
-    # -------------------------------
-    "1" = tagList(
-      h4("PART 3: Social History"),
-      p("I will begin the interview by asking you about your medical and mental health history at various points in your life.")
-    ),
-
-    # -------------------------------
-    # 2–3. Food insecurity
-    # -------------------------------
-    "2" = tagList(
-      h4("Food Insecurity"),
-      radioButtons(
-        "food_yn",
-        "18. Not able to afford food?",
-        choices = c("No" = 0, "Yes" = 1),
-        inline = TRUE
+      # -------------------------------
+      # 1. Intro######
+      # -------------------------------
+      "1" = tagList(
+        h4("PART 3: Social History"),
+        p("I will begin the interview by asking you about your medical and mental health history at various points in your life.")
       ),
-      conditionalPanel(
-        condition = "input.food_yn == 1",
-        dateInput("food_start", "Start date", value = NULL),
-        dateInput("food_end", "End date (N/A if ongoing)", value = NULL)
+
+      # -------------------------------
+      # 2–3. Food insecurity
+      # -------------------------------
+      "2" = tagList(
+        h4("Food Insecurity"),
+        radioButtons(
+          "food_yn",
+          "18. Not able to afford food?",
+          choices = c("No" = 0, "Yes" = 1),
+          inline = TRUE
+        ),
+        conditionalPanel(
+          condition = "input.food_yn == 1",
+          dateInput("food_start", "Start date", value = NULL),
+          dateInput("food_end", "End date (N/A if ongoing)", value = NULL)
+
+        )
+      ),
+      "3" = tagList(
+        h4("Stress outside of ED"),
+        radioButtons(
+          "stress_yn",
+          "19. Changes of eating outside of eating disorder (e.g., family issues, school issues, bullying)?",
+          choices = c("No" = 0, "Yes" = 1),
+          inline = TRUE
+        ),
+        conditionalPanel(
+          condition = "input.stress_yn == 1",
+          numericInput("n_stress", "How many periods of stress?", 0, min = 0)
+
+        )
+      ),
+      "4" = tagList(
+        h4(paste("Period of Stress", rv1$stress_index)),
+        dateInput("stress_start", "Start date", value = NULL),
+        dateInput("stress_end", "End date", value = NULL),
+        textAreaInput("stress_notes", "Notes (optional)", rows = 3)
 
       )
-    ),
-    "3" = tagList(
-      h4("Stress outside of ED"),
-      radioButtons(
-        "stress_yn",
-        "19. Changes of eating outside of eating disorder (e.g., family issues, school issues, bullying)?",
-        choices = c("No" = 0, "Yes" = 1),
-        inline = TRUE
-      ),
-      conditionalPanel(
-        condition = "input.stress_yn == 1",
-        numericInput("n_stress", "How many periods of stress?", 0, min = 0)
-
-      )
-    ),
-    "4" = tagList(
-      h4(paste("Period of Stress", rv1$stress_index)),
-      dateInput("stress_start", "Start date", value = NULL),
-      dateInput("stress_end", "End date", value = NULL),
-      textAreaInput("stress_notes", "Notes (optional)", rows = 3)
-
-  )
-  )
-})
+    )
+  })
 
 
-##### interview ######
+  ##### interview ######
   output$combinedGraph <- renderPlot({
     df <- combined_data$data
     req(nrow(df) > 0)
@@ -1082,12 +1049,12 @@ output$social_ui <- renderUI({
   })
 
 
-    observeEvent(input$restrict_ref_ui, {
-      showModal(
-        modalDialog(
-          title = "Restriction – Reference",
+  observeEvent(input$restrict_ref_ui, {
+    showModal(
+      modalDialog(
+        title = "Restriction – Reference",
 
-          p("Criteria:
+        p("Criteria:
 Did you...
 
 1. Deliberately try to limit the overall amount of food you ate?
@@ -1110,413 +1077,366 @@ Clinical = the participant followed a calorie limit, tracked food in an app, or 
 Subclinical = the participant skipped meals for reasons other than weight loss (not hungry in the morning, lack of time), skipped meals less than twice per week, or skipped meals to save calories for other meals]
 Clinical = the participant skipped meals more than 3 times per week for the purposes of weight loss]."),
 
-          easyClose = TRUE,
-          footer = modalButton("Close")
-        )
+        easyClose = TRUE,
+        footer = modalButton("Close")
       )
-    })
-    # --- CONVERT NUMERIC GRADES TO LABELS ---
-    output$timeline1 <- renderTimevis({
-      df <- timeline_data1()
+    )
+  })
+  # --- CONVERT NUMERIC GRADES TO LABELS ---
+  output$timeline1 <- renderTimevis({
+    df <- timeline_data1()
 
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
-        setOptions(list(editable = FALSE, align = "center"))
-    })
+    timevis(data.frame(
+      id = 1:nrow(df),
+      start = df$Date,
+      content = paste0("Age: ", df$Age, "<br>", df$Label)
+    )) %>%
+      setOptions(list(editable = FALSE, align = "center"))
+  })
 
-    observeEvent(input$submit1, {
-      req(shared_data$birthdate)
+  observeEvent(input$submit1, {
+    req(shared_data$birthdate)
 
-      entered_ages <- ages_restriction()
-      if (length(entered_ages) == 0) return()
+    entered_ages <- ages_restriction()
+    if (length(entered_ages) == 0) return()
 
-      birthdate1 <- as.Date(shared_data$birthdate)
+    birthdate1 <- as.Date(shared_data$birthdate)
 
-      start_date <- birthdate1 + min(entered_ages) * 365.25
-      end_date   <- birthdate1 + max(entered_ages) * 365.25
+    start_date <- birthdate1 + min(entered_ages) * 365.25
+    end_date   <- birthdate1 + max(entered_ages) * 365.25
 
 
-    })
+  })
 
-    restriction_data <- reactive({
-      ages <- ages_restriction()
+  restriction_data <- reactive({
+    ages <- ages_restriction()
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age)
-          input[[paste0("freq1_", age)]] %||% NA_real_
-        )
+    data.frame(
+      Age = ages,
+      Frequency = sapply(ages, function(age)
+        input[[paste0("freq1_", age)]] %||% NA_real_
       )
-    })
+    )
+  })
 
 
-    observeEvent(input$submit1, {
-      add_to_combined_data(restriction_data(), "Restriction")
-    })
+  observeEvent(input$submit1, {
+    add_to_combined_data(restriction_data(), "Restriction")
+  })
 
-    output$behaviorPlot1 <- renderPlotly({
+  output$behaviorPlot1 <- renderPlotly({
 
-      plot_ly(
-        restriction_data(),
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(
-            title = "Age",
-            tickmode = "linear",
-            tick0 = 0,     # starting age
-            dtick = 0.5    # half-year steps
-          ),
-          yaxis = list(title = "Frequency",
-          tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
-        )
-    })
+    plot_ly(
+      restriction_data(),
+      x = ~Age,
+      y = ~Frequency,
+      type = "scatter",
+      mode = "lines+markers",
+      line = list(color = "#ef6c45", width = 3),
+      marker = list(size = 8, color = "#1a4f66")
+    ) %>%
+      layout(
+        title = list(text = "", font = list(size = 20, color = "#1A4F66")),
+        xaxis = list(
+          title = "Age",
+          tickmode = "linear",
+          tick0 = 0,     # starting age
+          dtick = 0.5    # half-year steps
+        ),
+        yaxis = list(title = "Frequency",
+                     tick0 = 0),
+        plot_bgcolor = "white",
+        paper_bgcolor = "rgba(0,0,0,0)"
+      )
+  })
 
-    observeEvent(input$submit1, {
-      add_to_combined_data(restriction_data(), "Restriction")
-    })
+  observeEvent(input$submit1, {
+    add_to_combined_data(restriction_data(), "Restriction")
+  })
 
   # Fasting Calculations ####
-    fasting_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
+  fasting_timeline <- reactive({
+    req(shared_data$birthdate, shared_data$graduation_year)
 
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
+    birthdate <- as.Date(shared_data$birthdate)
+    kindergarten_year <- shared_data$graduation_year - 13
 
-      # --- Grade calculation ---
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
+    # --- Grade calculation ---
+    calculate_grade <- function(age) {
+      age_date <- birthdate + (age * 365.25)
+      year <- as.numeric(format(age_date, "%Y"))
+      sept1 <- as.Date(paste0(year, "-09-01"))
+      school_year <- ifelse(age_date < sept1, year - 1, year)
+      grade <- school_year - kindergarten_year
+      max(0, min(16, grade))
+    }
+
+    grade_to_label <- function(grade) {
+      if (grade <= 12) {
+        if (grade == 0) return("Kindergarten")
+        return(paste("Grade", grade))
       }
+      switch(as.character(grade),
+             "13"="College Freshman",
+             "14"="College Sophomore",
+             "15"="College Junior",
+             "16"="College Senior")
+    }
 
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
+    get_grade_label <- function(age) {
+      date <- birthdate + (age * 365.25)
+      month <- as.numeric(format(date, "%m"))
+      grade <- calculate_grade(age)
+
+      if (month %in% 6:8) {
+        if (grade == 16) return("Summer after College")
+        return(paste("Summer before", grade_to_label(min(16, grade + 1))))
       }
+      grade_to_label(grade)
+    }
 
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
+    # --- All ages from 8 to current age, by 0.5 years ---
+    current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
+    base_ages <- seq(8, floor(current_age), by = 0.5)
 
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
+    data.frame(
+      Age = base_ages,
+      Date = birthdate + (base_ages * 365.25),
+      Label = sapply(base_ages, get_grade_label)
+    )
+  })
 
-      # --- All ages from 8 to current age, by 0.5 years ---
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
 
-      data.frame(
-        Age = base_ages,
-        Date = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+
+
+  output$timeline2 <- renderTimevis({
+    df <- fasting_timeline()
+    req(nrow(df) > 0)
+
+    timevis(data.frame(
+      id = 1:nrow(df),
+      start = df$Date,
+      content = paste0("Age: ", df$Age, "<br>", df$Label)
+    )) %>%
+      setOptions(list(editable = FALSE, align = "center"))
+  })
+
+
+  fasting_data <- reactive({
+    ages <- ages_fasting()  # only ages with user-entered inputs
+    req(length(ages) > 0)
+
+    data.frame(
+      Age = ages,
+      Frequency = sapply(ages, function(age) input[[paste0("freq2_", age)]] %||% NA_real_)
+    )
+  })
+
+  output$behaviorPlot2 <- renderPlotly({
+    df <- fasting_data()
+    req(nrow(df) > 0)
+
+    plot_ly(
+      df,
+      x = ~Age,
+      y = ~Frequency,
+      type = "scatter",
+      mode = "lines+markers",
+      line = list(color = "#ef6c45", width = 3),
+      marker = list(size = 8, color = "#1a4f66")
+    ) %>%
+      layout(
+        title = list(text = "", font = list(size = 20, color = "#1A4F66")),
+        xaxis = list(
+          title = "Age",
+          tickmode = "linear",
+          tick0 = 0,
+          dtick = 0.5
+        ),
+        yaxis = list(title = "Frequency", tick0 = 0),
+        plot_bgcolor = "white",
+        paper_bgcolor = "rgba(0,0,0,0)"
       )
-    })
-
-
-
-
-    output$timeline2 <- renderTimevis({
-      df <- fasting_timeline()
-      req(nrow(df) > 0)
-
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
-        setOptions(list(editable = FALSE, align = "center"))
-    })
-
-
-    fasting_data <- reactive({
-      ages <- ages_fasting()  # only ages with user-entered inputs
-      req(length(ages) > 0)
-
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq2_", age)]] %||% NA_real_)
-      )
-    })
-
-    output$behaviorPlot2 <- renderPlotly({
-      df <- fasting_data()
-      req(nrow(df) > 0)
-
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(
-            title = "Age",
-            tickmode = "linear",
-            tick0 = 0,
-            dtick = 0.5
-          ),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
-        )
-    })
+  })
 
 
   #Vomiting Calculations ####
-    # ===============================
-    # VOMITING (match FASTING logic)
-    # ===============================
+  observeEvent(input$submit4, {
 
-    # --- Full timeline: ages 8 -> current age by 0.5 ---
-    vomit_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
+    birthdate4 <- as.Date(shared_data$birthdate)
+    kindergarten_year4 <- shared_data$graduation_year - 13
 
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
+    # --- GRADE CALCULATION 0–16 ---
+    calculate_grade <- function(age) {
+      age_date <- birthdate4 + (age * 365.25)
 
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
+      year <- as.numeric(format(age_date, "%Y"))
+      sept1 <- as.Date(paste0(year, "-09-01"))
+
+      # Before Sept 1 → still in last school year
+      school_year <- ifelse(age_date < sept1, year - 1, year)
+
+      grade <- school_year - kindergarten_year4
+      grade <- max(0, min(16, grade))
+      return(grade)
+    }
+
+    # --- MAP NUMERIC GRADES TO LABELS ---
+    grade_to_label <- function(grade) {
+      if (grade <= 12) {
+        if (grade == 0) return("Kindergarten")
+        return(paste("Grade", grade))
       }
-
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
-      }
-
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
-
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
-
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
-
-      data.frame(
-        Age   = base_ages,
-        Date  = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+      switch(
+        as.character(grade),
+        "13" = "College Freshman",
+        "14" = "College Sophomore",
+        "15" = "College Junior",
+        "16" = "College Senior"
       )
-    })
+    }
 
+    # --- DETERMINE SUMMER vs SCHOOL YEAR ---
+    get_grade_label <- function(age) {
+      date <- birthdate4 + (age * 365.25)
+      m <- as.numeric(format(date, "%m"))
+
+      grade <- calculate_grade(age)
+
+      # June, July, August → summer
+      if (m %in% 6:8) {
+
+        # After senior year of college
+        if (grade == 16) {
+          return("Summer after College")
+        }
+
+        next_grade <- min(16, grade + 1)
+        next_label <- grade_to_label(next_grade)
+
+        return(paste("Summer before", next_label))
+      }
+
+      # In school year
+      return(grade_to_label(grade))
+    }
+
+    # --- BUILD TIMELINE DATA ---
+    timeline_data4 <- data.frame(
+      Age = ages_vomit(),
+      Date = birthdate4 + (ages_vomit() * 365.25),
+      Label = sapply(ages_vomit(), get_grade_label)
+    )
+
+    # --- RENDER TIMEVIS TIMELINE ---
     output$timeline4 <- renderTimevis({
-      df <- vomit_timeline()
-      req(nrow(df) > 0)
-
       timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
+        id = 1:nrow(timeline_data4),
+        start = timeline_data4$Date,
+        content = paste0(
+          "Age: ", timeline_data4$Age,
+          "<br>", timeline_data4$Label
+        )
       )) %>%
         setOptions(list(editable = FALSE, align = "center"))
     })
 
+    vomit_data <- data.frame(
+      Age = ages_vomit(),
+      Frequency = sapply(ages_vomit(), function(age) input[[paste0("freq4_", age)]] %||% 0)
+    )
 
-    # --- Plotly data: only user-entered ages ---
-    vomit_data <- reactive({
-      ages <- ages_vomit()         # ONLY ages with user-entered inputs
-      req(length(ages) > 0)
+    add_to_combined_data(vomit_data, "Vomiting")
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq4_", age)]] %||% NA_real_)
-      )
-    })
-
-    output$behaviorPlot4 <- renderPlotly({
-      df <- vomit_data()
-      req(nrow(df) > 0)
-
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(
-            title = "Age",
-            tickmode = "linear",
-            tick0 = 0,
-            dtick = 0.5
-          ),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
+    output$behaviorPlot4 <- renderPlot({
+      ggplot(vomit_data, aes(x = Age, y = Frequency)) +
+        geom_line(color = "#6a3d9a", size = 1) +
+        geom_point(size = 3, color = "#1a4f66") +
+        labs(x = "Age", y = "Frequency", title = "Vomit") + theme(
+          panel.background = element_blank(),
+          plot.background  = element_blank(),
+          axis.title.x = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.title.y = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.text.x  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          axis.text.y  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          plot.title   = element_text(family = "Avenir", size = 20, face = "bold", color = "#1A4F66")
         )
+
     })
-
-
-    # --- If you only want to add to combined data on submit (like a "save" button) ---
-    observeEvent(input$submit4, {
-      req(shared_data$birthdate, shared_data$graduation_year)})
-
-
+  })
   # Laxative Calculation ####
-    # ===============================
-    # LAXATIVE (match FASTING logic)
-    # ===============================
+  observeEvent(input$submit5, {
+    birthdate5 <- as.Date(shared_data$birthdate)
+    kindergarten_year5 <- shared_data$graduation_year - 13
 
-    # --- Full timeline: ages 8 -> current age by 0.5 ---
-    laxative_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
-
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
-
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
-      }
-
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
-      }
-
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
-
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
-
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
-
-      data.frame(
-        Age   = base_ages,
-        Date  = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+    # grade → label conversion
+    grade_label <- function(grade_numeric) {
+      if (grade_numeric <= 12) return(as.character(grade_numeric))
+      switch(
+        as.character(grade_numeric),
+        "13" = "Freshman",
+        "14" = "Sophomore",
+        "15" = "Junior",
+        "16" = "Senior",
+        as.character(grade_numeric)
       )
-    })
+    }
+
+    # calculate numeric grade (0–16)
+    calculate_grade <- function(age) {
+      age_date <- birthdate5 + (age * 365.25)
+      age_year <- as.numeric(format(age_date, "%Y"))
+      grade <- age_year - kindergarten_year5
+      max(0, min(16, grade))  # clamp 0–16
+    }
+
+    ages <- ages_laxative()
+
+    timeline_data5 <- data.frame(
+      Age = ages,
+      Grade_numeric = sapply(ages, calculate_grade),
+      Date = birthdate5 + (ages * 365.25)
+    )
+
+    timeline_data5$Grade_label <- sapply(timeline_data5$Grade_numeric, grade_label)
 
     output$timeline5 <- renderTimevis({
-      df <- laxative_timeline()
-      req(nrow(df) > 0)
-
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
+      timevis(
+        data.frame(
+          id = 1:nrow(timeline_data5),
+          start = timeline_data5$Date,
+          content = paste0(
+            "Age: ", timeline_data5$Age,
+            "<br> Grade: ", timeline_data5$Grade_label
+          )
+        )
+      ) %>%
         setOptions(list(editable = FALSE, align = "center"))
     })
 
+    laxative_data <- data.frame(
+      Age = ages_laxative(),
+      Frequency = sapply(ages_laxative(), function(age) input[[paste0("freq5_", age)]] %||% 0)
+    )
 
-    # --- Plotly data: only user-entered ages ---
-    laxative_data <- reactive({
-      ages <- ages_laxative()
-      req(length(ages) > 0)
+    add_to_combined_data(laxative_data, "Laxative")
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq5_", age)]] %||% NA_real_)
-      )
-    })
-
-    output$behaviorPlot5 <- renderPlotly({
-      df <- laxative_data()
-      req(nrow(df) > 0)
-
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(
-            title = "Age",
-            tickmode = "linear",
-            tick0 = 0,
-            dtick = 0.5
-          ),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
+    output$behaviorPlot5 <- renderPlot({
+      ggplot(laxative_data, aes(x = Age, y = Frequency)) +
+        geom_line(color = "#e31a1c", size = 1) +
+        geom_point(size = 3, color = "#1a4f66") +
+        labs(x = "Age", y = "Frequency", title = "Laxative") + theme(
+          panel.background = element_blank(),
+          plot.background  = element_blank(),
+          axis.title.x = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.title.y = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.text.x  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          axis.text.y  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          plot.title   = element_text(family = "Avenir", size = 20, face = "bold", color = "#1A4F66")
         )
     })
 
-
-    # --- Save to combined data only when they click submit5 ---
-    observeEvent(input$submit5, {
-      req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(laxative_data), "Laxative")
-    })
+  })
 
 
   # Fasting Calculations ####
@@ -1709,7 +1629,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
 
     add_to_combined_data(vomit_data, "Vomiting")
 
-    output$behaviorPlot4 <- renderPlotly({
+    output$behaviorPlot4 <- renderPlot({
       ggplot(vomit_data, aes(x = Age, y = Frequency)) +
         geom_line(color = "#6a3d9a", size = 1) +
         geom_point(size = 3, color = "#1a4f66") +
@@ -1800,405 +1720,301 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
   })
 
   # Diuretic Calculation ####
-    # --- DIURETIC TIMELINE (8 -> current age) ---
-    diuretic_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
+  observeEvent(input$submit6, {
+    birthdate6 <- as.Date(shared_data$birthdate)
+    kindergarten_year6 <- shared_data$graduation_year - 13
 
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
-
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
-      }
-
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
-      }
-
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
-
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
-
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
-
-      data.frame(
-        Age = base_ages,
-        Date = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+    # grade → label conversion
+    grade_label <- function(grade_numeric) {
+      if (grade_numeric <= 12) return(as.character(grade_numeric))
+      switch(
+        as.character(grade_numeric),
+        "13" = "Freshman",
+        "14" = "Sophomore",
+        "15" = "Junior",
+        "16" = "Senior",
+        as.character(grade_numeric)
       )
-    })
+    }
+
+    # calculate numeric grade (0–16)
+    calculate_grade <- function(age) {
+      age_date <- birthdate6 + (age * 365.25)
+      age_year <- as.numeric(format(age_date, "%Y"))
+      grade <- age_year - kindergarten_year6
+      max(0, min(16, grade))  # clamp 0–16
+    }
+
+    ages <- ages_diuretic()
+
+    timeline_data6 <- data.frame(
+      Age = ages,
+      Grade_numeric = sapply(ages, calculate_grade),
+      Date = birthdate6 + (ages * 365.25)
+    )
+
+    timeline_data6$Grade_label <- sapply(timeline_data6$Grade_numeric, grade_label)
 
     output$timeline6 <- renderTimevis({
-      df <- diuretic_timeline()
-      req(nrow(df) > 0)
-
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
+      timevis(
+        data.frame(
+          id = 1:nrow(timeline_data6),
+          start = timeline_data6$Date,
+          content = paste0(
+            "Age: ", timeline_data6$Age,
+            "<br> Grade: ", timeline_data6$Grade_label
+          )
+        )
+      ) %>%
         setOptions(list(editable = FALSE, align = "center"))
     })
 
-    # --- DIURETIC DATA (only entered ages) ---
-    diuretic_data <- reactive({
-      ages <- ages_diuretic()
-      req(length(ages) > 0)
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq6_", age)]] %||% NA_real_)
-      )
-    })
+    diuretic_data <- data.frame(
+      Age = ages_diuretic(),
+      Frequency = sapply(ages_diuretic(), function(age) input[[paste0("freq6_", age)]] %||% 0)
+    )
 
-    output$behaviorPlot6 <- renderPlotly({
-      df <- diuretic_data()
-      req(nrow(df) > 0)
+    add_to_combined_data(diuretic_data, "Diuretic")
 
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(title = "Age", tickmode = "linear", tick0 = 0, dtick = 0.5),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
+    output$behaviorPlot6 <- renderPlot({
+      ggplot(diuretic_data, aes(x = Age, y = Frequency)) +
+        geom_line(color = "#ff7f00", size = 1) +
+        geom_point(size = 3, color = "#1a4f66") +
+        labs(x = "Age", y = "Frequency", title = "Diuretic") + theme(
+          panel.background = element_blank(),
+          plot.background  = element_blank(),
+          axis.title.x = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.title.y = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.text.x  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          axis.text.y  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          plot.title   = element_text(family = "Avenir", size = 20, face = "bold", color = "#1A4F66")
         )
     })
+  })
 
-    observeEvent(input$submit6, {
-      req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(diuretic_data), "Diuretic")
-    })
+  # WLMED Calculations ####
+  observeEvent(input$submit7, {
+    birthdate7 <- as.Date(shared_data$birthdate)
+    kindergarten_year7 <- shared_data$graduation_year - 13
 
-
-    # --- WLMED TIMELINE (8 -> current age) ---
-    wlmed_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
-
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
-
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
-      }
-
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
-      }
-
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
-
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
-
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
-
-      data.frame(
-        Age = base_ages,
-        Date = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+    # grade → label conversion
+    grade_label <- function(grade_numeric) {
+      if (grade_numeric <= 12) return(as.character(grade_numeric))
+      switch(
+        as.character(grade_numeric),
+        "13" = "Freshman",
+        "14" = "Sophomore",
+        "15" = "Junior",
+        "16" = "Senior",
+        as.character(grade_numeric)
       )
-    })
+    }
+
+    # calculate numeric grade (0–16)
+    calculate_grade <- function(age) {
+      age_date <- birthdate7 + (age * 365.25)
+      age_year <- as.numeric(format(age_date, "%Y"))
+      grade <- age_year - kindergarten_year7
+      max(0, min(16, grade))  # clamp 0–16
+    }
+
+    ages <- ages_wlmed()
+
+    timeline_data7 <- data.frame(
+      Age = ages,
+      Grade_numeric = sapply(ages, calculate_grade),
+      Date = birthdate7 + (ages * 365.25)
+    )
+
+    timeline_data7$Grade_label <- sapply(timeline_data7$Grade_numeric, grade_label)
 
     output$timeline7 <- renderTimevis({
-      df <- wlmed_timeline()
-      req(nrow(df) > 0)
-
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
+      timevis(
+        data.frame(
+          id = 1:nrow(timeline_data7),
+          start = timeline_data7$Date,
+          content = paste0(
+            "Age: ", timeline_data7$Age,
+            "<br> Grade: ", timeline_data7$Grade_label
+          )
+        )
+      ) %>%
         setOptions(list(editable = FALSE, align = "center"))
     })
 
-    # --- WLMED DATA (only entered ages) ---
-    wlmed_data <- reactive({
-      ages <- ages_wlmed()
-      req(length(ages) > 0)
+    wlmed_data <- data.frame(
+      Age = ages_wlmed(),
+      Frequency = sapply(ages_wlmed(), function(age) input[[paste0("freq7_", age)]] %||% 0)
+    )
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq7_", age)]] %||% NA_real_)
-      )
-    })
+    add_to_combined_data(wlmed_data, "WLMED")
 
-    output$behaviorPlot7 <- renderPlotly({
-      df <- wlmed_data()
-      req(nrow(df) > 0)
-
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(title = "Age", tickmode = "linear", tick0 = 0, dtick = 0.5),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
+    output$behaviorPlot7 <- renderPlot({
+      ggplot(wlmed_data, aes(x = Age, y = Frequency)) +
+        geom_line(color = "#33a02c", size = 1) +
+        geom_point(size = 3, color = "#1a4f66") +
+        theme_minimal() +
+        labs(x = "Age", y = "Frequency", title = "WLMED") + theme(
+          panel.background = element_blank(),
+          plot.background  = element_blank(),
+          axis.title.x = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.title.y = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.text.x  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          axis.text.y  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          plot.title   = element_text(family = "Avenir", size = 20, face = "bold", color = "#1A4F66")
         )
     })
+  })
 
-    observeEvent(input$submit7, {
-      req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(wlmed_data), "WLMED")
-    })
-    # --- EXERCISE TIMELINE (8 -> current age) ---
-    exercise_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
+  #Exercise Calculations ####
+  observeEvent(input$submit8, {
+    birthdate8 <- as.Date(shared_data$birthdate)
+    kindergarten_year8 <- shared_data$graduation_year - 13
 
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
-
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
-      }
-
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
-      }
-
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
-
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
-
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
-
-      data.frame(
-        Age = base_ages,
-        Date = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+    # grade → label conversion
+    grade_label <- function(grade_numeric) {
+      if (grade_numeric <= 12) return(as.character(grade_numeric))
+      switch(
+        as.character(grade_numeric),
+        "13" = "Freshman",
+        "14" = "Sophomore",
+        "15" = "Junior",
+        "16" = "Senior",
+        as.character(grade_numeric)
       )
-    })
+    }
+
+    # calculate numeric grade (0–16)
+    calculate_grade <- function(age) {
+      age_date <- birthdate8 + (age * 365.25)
+      age_year <- as.numeric(format(age_date, "%Y"))
+      grade <- age_year - kindergarten_year8
+      max(0, min(16, grade))  # clamp 0–16
+    }
+
+    ages <- ages_exercise()
+
+    timeline_data8 <- data.frame(
+      Age = ages,
+      Grade_numeric = sapply(ages, calculate_grade),
+      Date = birthdate8 + (ages * 365.25)
+    )
+
+    timeline_data8$Grade_label <- sapply(timeline_data8$Grade_numeric, grade_label)
 
     output$timeline8 <- renderTimevis({
-      df <- exercise_timeline()
-      req(nrow(df) > 0)
-
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
+      timevis(
+        data.frame(
+          id = 1:nrow(timeline_data8),
+          start = timeline_data8$Date,
+          content = paste0(
+            "Age: ", timeline_data8$Age,
+            "<br> Grade: ", timeline_data8$Grade_label
+          )
+        )
+      ) %>%
         setOptions(list(editable = FALSE, align = "center"))
     })
 
-    # --- EXERCISE DATA (only entered ages) ---
-    exercise_data <- reactive({
-      ages <- ages_exercise()
-      req(length(ages) > 0)
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq8_", age)]] %||% NA_real_)
-      )
-    })
+    exercise_data <- data.frame(
+      Age = ages_exercise(),
+      Frequency = sapply(ages_exercise(), function(age) input[[paste0("freq8_", age)]] %||% 0)
+    )
 
-    output$behaviorPlot8 <- renderPlotly({
-      df <- exercise_data()
-      req(nrow(df) > 0)
+    add_to_combined_data(exercise_data, "Exercise")
 
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(title = "Age", tickmode = "linear", tick0 = 0, dtick = 0.5),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
+    output$behaviorPlot8 <- renderPlot({
+      ggplot(exercise_data, aes(x = Age, y = Frequency)) +
+        geom_line(color = "#6a3d9a", size = 1) +
+        geom_point(size = 3, color = "#1a4f66") +
+        labs(x = "Age", y = "Frequency", title = "Exercise")+ theme(
+          panel.background = element_blank(),
+          plot.background  = element_blank(),
+          axis.title.x = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.title.y = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.text.x  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          axis.text.y  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          plot.title   = element_text(family = "Avenir", size = 20, face = "bold", color = "#1A4F66")
         )
     })
+  })
 
-    observeEvent(input$submit8, {
-      req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(exercise_data), "Exercise")
-    })
-    # --- BINGE TIMELINE (8 -> current age) ---
-    binge_timeline <- reactive({
-      req(shared_data$birthdate, shared_data$graduation_year)
 
-      birthdate <- as.Date(shared_data$birthdate)
-      kindergarten_year <- shared_data$graduation_year - 13
+  # Binge Calculations ####
+  observeEvent(input$submit3, {
+    birthdate3 <- as.Date(shared_data$birthdate)
+    kindergarten_year3 <- shared_data$graduation_year - 13
 
-      calculate_grade <- function(age) {
-        age_date <- birthdate + (age * 365.25)
-        year <- as.numeric(format(age_date, "%Y"))
-        sept1 <- as.Date(paste0(year, "-09-01"))
-        school_year <- ifelse(age_date < sept1, year - 1, year)
-        grade <- school_year - kindergarten_year
-        max(0, min(16, grade))
-      }
-
-      grade_to_label <- function(grade) {
-        if (grade <= 12) {
-          if (grade == 0) return("Kindergarten")
-          return(paste("Grade", grade))
-        }
-        switch(as.character(grade),
-               "13"="College Freshman",
-               "14"="College Sophomore",
-               "15"="College Junior",
-               "16"="College Senior")
-      }
-
-      get_grade_label <- function(age) {
-        date <- birthdate + (age * 365.25)
-        month <- as.numeric(format(date, "%m"))
-        grade <- calculate_grade(age)
-
-        if (month %in% 6:8) {
-          if (grade == 16) return("Summer after College")
-          return(paste("Summer before", grade_to_label(min(16, grade + 1))))
-        }
-        grade_to_label(grade)
-      }
-
-      current_age <- as.numeric(difftime(Sys.Date(), birthdate, units = "days")) / 365.25
-      base_ages <- seq(8, floor(current_age), by = 0.5)
-
-      data.frame(
-        Age = base_ages,
-        Date = birthdate + (base_ages * 365.25),
-        Label = sapply(base_ages, get_grade_label)
+    # grade → label conversion
+    grade_label <- function(grade_numeric) {
+      if (grade_numeric <= 12) return(as.character(grade_numeric))
+      switch(
+        as.character(grade_numeric),
+        "13" = "Freshman",
+        "14" = "Sophomore",
+        "15" = "Junior",
+        "16" = "Senior",
+        as.character(grade_numeric)
       )
-    })
+    }
+
+    # calculate numeric grade (0–16)
+    calculate_grade <- function(age) {
+      age_date <- birthdate3 + (age * 365.25)
+      age_year <- as.numeric(format(age_date, "%Y"))
+      grade <- age_year - kindergarten_year3
+      max(0, min(16, grade))  # clamp 0–16
+    }
+
+    ages <- ages_binge()
+
+    timeline_data3 <- data.frame(
+      Age = ages,
+      Grade_numeric = sapply(ages, calculate_grade),
+      Date = birthdate3 + (ages * 365.25)
+    )
+
+    timeline_data3$Grade_label <- sapply(timeline_data3$Grade_numeric, grade_label)
 
     output$timeline3 <- renderTimevis({
-      df <- binge_timeline()
-      req(nrow(df) > 0)
-
-      timevis(data.frame(
-        id = 1:nrow(df),
-        start = df$Date,
-        content = paste0("Age: ", df$Age, "<br>", df$Label)
-      )) %>%
+      timevis(
+        data.frame(
+          id = 1:nrow(timeline_data3),
+          start = timeline_data3$Date,
+          content = paste0(
+            "Age: ", timeline_data3$Age,
+            "<br> Grade: ", timeline_data3$Grade_label
+          )
+        )
+      ) %>%
         setOptions(list(editable = FALSE, align = "center"))
     })
 
-    # --- BINGE DATA (only entered ages) ---
-    binge_data <- reactive({
-      ages <- ages_binge()
-      req(length(ages) > 0)
 
-      data.frame(
-        Age = ages,
-        Frequency = sapply(ages, function(age) input[[paste0("freq3_", age)]] %||% NA_real_)
-      )
-    })
+    binge_data <- data.frame(
+      Age = ages_binge(),
+      Frequency = sapply(ages_binge(), function(age) input[[paste0("freq3_", age)]] %||% 0)
+    )
 
-    output$behaviorPlot3 <- renderPlotly({
-      df <- binge_data()
-      req(nrow(df) > 0)
+    add_to_combined_data(binge_data, "Binge")
 
-      plot_ly(
-        df,
-        x = ~Age,
-        y = ~Frequency,
-        type = "scatter",
-        mode = "lines+markers",
-        line = list(color = "#ef6c45", width = 3),
-        marker = list(size = 8, color = "#1a4f66")
-      ) %>%
-        layout(
-          title = list(text = "", font = list(size = 20, color = "#1A4F66")),
-          xaxis = list(title = "Age", tickmode = "linear", tick0 = 0, dtick = 0.5),
-          yaxis = list(title = "Frequency", tick0 = 0),
-          plot_bgcolor = "white",
-          paper_bgcolor = "rgba(0,0,0,0)"
+    output$behaviorPlot3 <- renderPlot({
+      ggplot(binge_data, aes(x = Age, y = Frequency)) +
+        geom_line(color = "#6a3d9a", size = 1) +
+        geom_point(size = 3, color = "#1a4f66") +
+        labs(x = "Age", y = "Frequency", title = "Binge")+ theme(
+          panel.background = element_blank(),
+          plot.background  = element_blank(),
+          axis.title.x = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.title.y = element_text(family = "Avenir", size = 16, face = "bold", color = "#1A4F66"),
+          axis.text.x  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          axis.text.y  = element_text(family = "Avenir", size = 14, color = "#1A4F66"),
+          plot.title   = element_text(family = "Avenir", size = 20, face = "bold", color = "#1A4F66")
         )
     })
-
-    observeEvent(input$submit3, {
-      req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(binge_data), "Binge")
-    })
-
+  })
 
   # Weight Chart Tab: Excel Data & Additional Markers with Interactive Tooltip and Legend #####
   weight_data <- reactive({
@@ -2427,7 +2243,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
   })
 
 
-#### 1. Data Ingestion ####
+  #### 1. Data Ingestion ####
 
   ##### 1.1 Demo vs. Upload #####
 
@@ -2444,21 +2260,21 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
     }
   })
 
-    ##### 1.2 Prep data #####
+  ##### 1.2 Prep data #####
 
-      ###### 1.2.1 Demo Prep ######
-tx_start_date_for_demo_participants <- reactive({
-  if (input$data_source == 'demo') {
-    switch(as.character(input$person_id),
-           "1" = Sys.Date() - lubridate::days(120), # Example: Tx start date for participant 1
-           "2" = Sys.Date() - lubridate::days(150), # Example: Tx start date for participant 2
-           "3" = Sys.Date() - lubridate::days(180), # Example: Tx start date for participant 3
-           NULL
-    )
-  } else {
-    Sys.Date()
-  }
-})
+  ###### 1.2.1 Demo Prep ######
+  tx_start_date_for_demo_participants <- reactive({
+    if (input$data_source == 'demo') {
+      switch(as.character(input$person_id),
+             "1" = Sys.Date() - lubridate::days(120), # Example: Tx start date for participant 1
+             "2" = Sys.Date() - lubridate::days(150), # Example: Tx start date for participant 2
+             "3" = Sys.Date() - lubridate::days(180), # Example: Tx start date for participant 3
+             NULL
+      )
+    } else {
+      Sys.Date()
+    }
+  })
 
   dob_for_demo_participants <- reactive({
     if (input$data_source == 'demo') {
@@ -2473,7 +2289,7 @@ tx_start_date_for_demo_participants <- reactive({
     }
   })
 
-      ###### 1.2.2 Parse Dates ######
+  ###### 1.2.2 Parse Dates ######
   parsed_data <- reactive({
     df <- data()
     date_columns <- c(input$dob_column, input$assessment_date_column)  # Get the date columns from the user inputs
@@ -2488,7 +2304,7 @@ tx_start_date_for_demo_participants <- reactive({
     "dob" %in% input$age_columns && !("dob" %in% colnames(cleaned_df))
   })
 
-#### 2. Data Input  ####
+  #### 2. Data Input  ####
 
   ##### 2.1 Identify checkboxes to include or select #####
   observeEvent(input$data_source, {
@@ -2558,19 +2374,19 @@ tx_start_date_for_demo_participants <- reactive({
       inputs <- append(inputs, columns_list[["assessment_date"]])
     }
 
-      if (input$data_type == "one" && input$data_source != "demo") {
-        if (!("Dates" %in% input$age_columns) && !("age" %in% input$age_columns)) {
-          inputs <- append(inputs, list(dateInput("dob", "What is the individual's date of birth?")))
-        }
-        # add an optional age at adult height input
-          if (!("age_adult_height" %in% input$demographics_columns)) {
-            inputs <- append(inputs, list(
-              numericInput("aheight_age", "What is the individual's age at adult height (Optional)?", value = NULL, min = 1, max = 25)
-            ))
-          }
-        if (!("sex" %in% input$demographics_columns)) {
-          inputs <- append(inputs, list(selectInput("sex", "What is the individual's sex at birth?", choices = c("Female", "Male"))))
-          }
+    if (input$data_type == "one" && input$data_source != "demo") {
+      if (!("Dates" %in% input$age_columns) && !("age" %in% input$age_columns)) {
+        inputs <- append(inputs, list(dateInput("dob", "What is the individual's date of birth?")))
+      }
+      # add an optional age at adult height input
+      if (!("age_adult_height" %in% input$demographics_columns)) {
+        inputs <- append(inputs, list(
+          numericInput("aheight_age", "What is the individual's age at adult height (Optional)?", value = NULL, min = 1, max = 25)
+        ))
+      }
+      if (!("sex" %in% input$demographics_columns)) {
+        inputs <- append(inputs, list(selectInput("sex", "What is the individual's sex at birth?", choices = c("Female", "Male"))))
+      }
     }
 
     do.call(tagList, inputs)
@@ -2582,7 +2398,7 @@ tx_start_date_for_demo_participants <- reactive({
 
 
 
-#### 3. Clean Data ####
+  #### 3. Clean Data ####
   ##### 3.1 Ensures all data is included before data cleaning #####
   observeEvent(input$next_button_data_input, {
     if (input$data_source == "upload" && (
@@ -2750,7 +2566,7 @@ tx_start_date_for_demo_participants <- reactive({
     head(data(), 30)
   })
 
-#### 4. Model Data ####
+  #### 4. Model Data ####
   ##### 4.1. Runs Model when 'Run Model' is selected in Model Selection tab #####
   observe({
     req(cleaned_data())
@@ -2769,13 +2585,13 @@ tx_start_date_for_demo_participants <- reactive({
     ed_aoo_input <- as.numeric(age_in_months(input$ed_aoo, age_unit = input$age_unit))
     cleaned_df <- cleaned_data()
 
-if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
-  # Only filter by ID if the user uploaded multiple participants
-  selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
-} else {
-  # Otherwise, for a single participant, use all rows
-  selected_data <- cleaned_df
-}
+    if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
+      # Only filter by ID if the user uploaded multiple participants
+      selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
+    } else {
+      # Otherwise, for a single participant, use all rows
+      selected_data <- cleaned_df
+    }
 
     selected_data <- cleaned_df[cleaned_df[["id"]] == input$person_id, ]
 
@@ -2856,7 +2672,7 @@ if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
   })
 
   ##### 4.2 Expected Weight and BMI plot outputs #####
-    ###### 4.2.1 Expected Weight Plot ######
+  ###### 4.2.1 Expected Weight Plot ######
   output$WtPlot <- renderPlot({
     req(model_data())
     data <- model_data()
@@ -2880,7 +2696,7 @@ if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
       })
     }
   }, bg = "transparent")
-    ###### 4.2.2 Expected Weight Table ######
+  ###### 4.2.2 Expected Weight Table ######
   output$forecast_output_2 <- renderTable({
     req(model_data())
     data <- model_data()
@@ -2896,7 +2712,7 @@ if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
 
     head(forecast_output, 30)
   })
-    ###### 4.2.3 Expected BMI Plot ######
+  ###### 4.2.3 Expected BMI Plot ######
   output$BMIPlot <- renderPlot({
     req(model_data())
     data <- model_data()
@@ -2912,7 +2728,7 @@ if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
       cat("Error in plotting BMI:", e$message, "\n")
     })
   }, bg = "transparent")
-    ###### 4.2.4 Expected BMI Table ######
+  ###### 4.2.4 Expected BMI Table ######
   output$forecast_output_1 <- renderTable({
     req(model_data())
     data <- model_data()
@@ -3066,7 +2882,7 @@ if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
   check_model_and_summary <- reactive({
     cleaned_data_status() && !is.null(model_data()) && input$model_type != "" && input$confidence_interval != ""
   })
-#### 5. Weight Restoration Planning #####
+  #### 5. Weight Restoration Planning #####
   ##### 5.1 Weight restoration Inputs #####
   output$conditional_weight_restoration_inputs <- renderUI({
     req(input$person_id)
@@ -3462,7 +3278,7 @@ if (input$data_type == "multiple" && "id" %in% names(cleaned_df)) {
       }, bg = "transparent")
     }
   })
-#### 6. Navigation ####
+  #### 6. Navigation ####
   observeEvent(input$next_button_data_spec, {
     updateTabsetPanel(session, "main_tabs", selected = "Model Selection")
   })
