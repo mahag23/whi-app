@@ -1,7 +1,7 @@
 library(shiny)
 library(shinyjs)
 library(timevis)
-library(plotly)
+
 library(ggplot2)
 library(embarktools)
 library(readxl)
