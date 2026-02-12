@@ -1513,11 +1513,8 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
 
 
     # --- Save to combined data only when they click submit5 ---
-    observeEvent(input$submit5, {
-      req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(laxative_data), "Laxative")
-    })
-
+    observeEvent(input$submit4, {
+      req(shared_data$birthdate, shared_data$graduation_year)})
 
   # Fasting Calculations ####
   observeEvent(input$submit2, {
@@ -1780,7 +1777,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
       Frequency = sapply(ages_laxative(), function(age) input[[paste0("freq5_", age)]] %||% 0)
     )
 
-    add_to_combined_data(laxative_data, "Laxative")
+    add_to_combined_data(laxative_data(), "Laxative")
 
     output$behaviorPlot5 <- renderPlot({
       ggplot(laxative_data, aes(x = Age, y = Frequency)) +
@@ -1897,7 +1894,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
 
     observeEvent(input$submit6, {
       req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(diuretic_data), "Diuretic")
+      add_to_combined_data ((diuretic_data()), "Diuretic")
     })
 
 
@@ -1998,7 +1995,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
 
     observeEvent(input$submit7, {
       req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(wlmed_data), "WLMED")
+      add_to_combined_data((wlmed_data()), "WLMED")
     })
     # --- EXERCISE TIMELINE (8 -> current age) ---
     exercise_timeline <- reactive({
@@ -2097,7 +2094,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
 
     observeEvent(input$submit8, {
       req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(exercise_data), "Exercise")
+      add_to_combined_data((exercise_data()), "Exercise")
     })
     # --- BINGE TIMELINE (8 -> current age) ---
     binge_timeline <- reactive({
@@ -2196,7 +2193,7 @@ Clinical = the participant skipped meals more than 3 times per week for the purp
 
     observeEvent(input$submit3, {
       req(shared_data$birthdate, shared_data$graduation_year)
-      add_to_combined_data(isolate(binge_data), "Binge")
+      add_to_combined_data((binge_data()), "Binge")
     })
 
 

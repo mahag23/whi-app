@@ -179,9 +179,9 @@ ui <- navbarPage(
       sidebarPanel(
         numericInput("age_start5", "Age When Behavior Starts:", value = 0, min = 0),
         numericInput("age_end5", "Age When Behavior Ends:", value = 0, min = 0),
-        actionButton("submit5", "Generate Timeline and Graph"),
         br(),
-        uiOutput("behavior_input_ui5")
+        uiOutput("behavior_input_ui5"),
+        actionButton("submit5", "Save Graph Data"),
       ),
       mainPanel(
         h3("Laxative"),
